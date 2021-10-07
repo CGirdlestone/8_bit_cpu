@@ -1,20 +1,20 @@
 
 struct CPU {
-	pc: u8,
-	a: u8,
-	b: u8,
-	c: u8,
-	alu: u8,
-	mar: u8,
-	mdr: u8,
-	ir: u8,
+	pc: u8, // program counter
+	a: u8, // a(ccumulator) register
+	b: u8, // b register (general purpose)
+	c: u8, // c register (output)
+	alu: u8, // arithmetic logic unit
+	mar: u8, // memory address register
+	mdr: u8, // memory data register
+	ir: u8, // instruction register
 	bus: u8,
-	sp: u8,
-	eeprom: [u16; 8192],
-	ram: [u8; 256],
-	rom: [u8; 256],
-	halt: u8, 
-	flags: u8,
+	sp: u8, // stack pointer
+	eeprom: [u16; 8192], // eeprom containing the cpu control signals
+	ram: [u8; 256], // random access memory (upper 128 bytes used by the cpu stack)
+	rom: [u8; 256], // read only memory - contains the program code
+	halt: u8, // program halt signal
+	flags: u8, // cpu flags - currently only two are used (zero and carry) XXXX XXZC
 }
 
 fn xor (a: u8, b: u8) -> u8 {
@@ -47,7 +47,10 @@ fn add (a: u8, mut b: u8, flags: &mut u8, subtract: u8) -> u8 {
 		carry = or(and((a >> bit) & 0x01, (b >> bit) & 0x01), and(xor((a >> bit) & 0x01, (b >> bit) & 0x01), carry));
 	}
 
+	// set carry flag
 	*flags = *flags | (carry << 0);
+	
+	// set zero flag
 	if z == 0x00 {
 		*flags = *flags | (1 << 1);
 	} else {
@@ -110,11 +113,12 @@ fn execute_program(_cpu: &mut CPU) {
 }
 
 fn load_eeprom(_cpu: &mut CPU) {
+	// all opcodes must fetch instruction and increment program counter
 	for i in 0..255 {
 		// any flags state
 		for j in 0..4 {
 			_cpu.eeprom[(j << 11) | i] = 0x07C; // (PC out, MAR in) for all instructions at microstep 0 --> X X 000 XXXX XXXX
-			_cpu.eeprom[(j << 11) | (0x1 << 8) | i] = 0x069; // (ROM out, IR in, PC inc) for all instructions at microstep 1 --> --> X X 001 XXXX XXXX
+			_cpu.eeprom[(j << 11) | (0x1 << 8) | i] = 0x069; // (ROM out, IR in, PC inc) for all instructions at microstep 1 --> X X 001 XXXX XXXX
 		}
 	}
 
@@ -130,12 +134,12 @@ fn load_eeprom(_cpu: &mut CPU) {
 
 	// LOAD A OPCODE 0000 0001
 	for i in 0..4 {
-		_cpu.eeprom[(i << 11) | (0x2 << 8) | 0x01] = 0x07C; // (PC out, MAR in)			X X 010 0000 0001
+		_cpu.eeprom[(i << 11) | (0x2 << 8) | 0x01] = 0x07C; // (PC out, MAR in)          X X 010 0000 0001
 		_cpu.eeprom[(i << 11) | (0x3 << 8) | 0x01] = 0x06D; // (ROM out, MAR in, pc inc) X X 011 0000 0001
-		_cpu.eeprom[(i << 11) | (0x4 << 8) | 0x01] = 0x05A; // (RAM out, MDR in)			X X 100 0000 0001
-		_cpu.eeprom[(i << 11) | (0x5 << 8) | 0x01] = 0x044; // (MDR out, A in)			X X 101 0000 0001
-		_cpu.eeprom[(i << 11) | (0x6 << 8) | 0x01] = 0x000; //							X X 110 0000 0001
-		_cpu.eeprom[(i << 11) | (0x7 << 8) | 0x01] = 0x000; //							X X 111 0000 0001
+		_cpu.eeprom[(i << 11) | (0x4 << 8) | 0x01] = 0x05A; // (RAM out, MDR in)         X X 100 0000 0001
+		_cpu.eeprom[(i << 11) | (0x5 << 8) | 0x01] = 0x044; // (MDR out, A in)           X X 101 0000 0001
+		_cpu.eeprom[(i << 11) | (0x6 << 8) | 0x01] = 0x000; //                           X X 110 0000 0001
+		_cpu.eeprom[(i << 11) | (0x7 << 8) | 0x01] = 0x000; //                           X X 111 0000 0001
 	}
 
 	// LOAD B OPCODE 0000 0010
@@ -248,11 +252,11 @@ fn load_eeprom(_cpu: &mut CPU) {
 		_cpu.eeprom[(i << 11) | (0x7 << 8) | 0x06] = 0x000;
 	}
 
-	// STORE A OPCODE 0000 1110
+	// STORE B OPCODE 0000 1110
 	for i in 0..4 {
 		_cpu.eeprom[(i << 11) | (0x2 << 8) | 0x0e] = 0x07C; // PC out, MAR in
 		_cpu.eeprom[(i << 11) | (0x3 << 8) | 0x0e] = 0x06d; // ROM out, MAR in, PC inc
-		_cpu.eeprom[(i << 11) | (0x4 << 8) | 0x0e] = 0x0B0; // A out, RAM in
+		_cpu.eeprom[(i << 11) | (0x4 << 8) | 0x0e] = 0x0B0; // B out, RAM in
 		_cpu.eeprom[(i << 11) | (0x5 << 8) | 0x0e] = 0x000;
 		_cpu.eeprom[(i << 11) | (0x6 << 8) | 0x0e] = 0x000;
 		_cpu.eeprom[(i << 11) | (0x7 << 8) | 0x0e] = 0x000;
