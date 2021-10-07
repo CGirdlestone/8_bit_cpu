@@ -335,13 +335,54 @@ fn main() {
  
     let mut _cpu = create_cpu();
 
-    _cpu.rom[0] = 0x04;
-    _cpu.rom[1] = 0x08;
-    _cpu.rom[2] = 0x05;
-    _cpu.rom[3] = 0x08;
-    _cpu.rom[4] = 0x03;
-    _cpu.rom[5] = 0x80;
-    _cpu.rom[6] = 0xFF;
+	// set up variables
+    _cpu.rom[0] = 0x04; 	//	load A immediate
+    _cpu.rom[1] = 0x00; 	//	value 0
+	_cpu.rom[2] = 0x80;		//	output first term 
+    _cpu.rom[3] = 0x06; 	//	store A
+    _cpu.rom[4] = 0x00; 	//	memory location 0x00 - 'a'
+    _cpu.rom[5] = 0x06;		//	store A
+    _cpu.rom[6] = 0x02;		//	memory location 0x02 - 'b'
+	_cpu.rom[7] = 0x04;		//	load A immediate
+	_cpu.rom[8] = 0x01;		// 	value 1
+	_cpu.rom[9] = 0x80;		//	output second term
+	_cpu.rom[10] = 0x06;	//	store A
+	_cpu.rom[11] = 0x01; 	// 	memory location 0x01 - 'c'
+	_cpu.rom[12] = 0x04;	//	load A immediate
+	_cpu.rom[13] = 0x0a;	//	value 10 - number of iterations
+	_cpu.rom[14] = 0x06;	//	store A
+	_cpu.rom[15] = 0x03;	//	memory location 0x03 - 'n'
+    
+	// add terms
+	_cpu.rom[16] = 0x01; 	// load A from memory
+	_cpu.rom[17] = 0x00;	// memory location 0x00 'a'
+	_cpu.rom[18] = 0x02;	// load B from memory
+	_cpu.rom[19] = 0x01;	// memory location 0x01 'b'
+	_cpu.rom[20] = 0x03;	// add B to A
+	_cpu.rom[21] = 0x06;	// store A
+	_cpu.rom[22] = 0x02;	// memory location 0x02 'c'
+	_cpu.rom[23] = 0x0e;	// store B - currently holds the value in variable 'b'
+	_cpu.rom[24] = 0x00;	// memory location 0x00 'a'
+	_cpu.rom[25] = 0x06;	// store A
+	_cpu.rom[26] = 0x01;	// memory location 0x01 'b'
+
+	// output
+	_cpu.rom[27] = 0x80;	// output term
+
+	// decrement counter
+	_cpu.rom[28] = 0x01;	// load A from memory
+	_cpu.rom[29] = 0x03;	// memory location 0x03 'n'
+	_cpu.rom[30] = 0x05;	// load B immediate
+	_cpu.rom[31] = 0x07;	// sub B from A
+	_cpu.rom[32] = 0x06;	// store A
+	_cpu.rom[33] = 0x03;	// memory location 0x03 'n'
+
+	// check if counter is zero
+	_cpu.rom[34] = 0x12;	// jump not zero
+	_cpu.rom[35] = 0x0e;	// memory location to jump to	
+
+	// end program
+	_cpu.rom[36] = 0xFF;
 
     execute_program(&mut _cpu);
 }
