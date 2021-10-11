@@ -1,0 +1,20 @@
+MOV A, 20; % I wonder if this will show up
+MOV B, 10;
+MOV A, #10;
+STR A, #10;
+PSH B;
+POP B;
+JMP #3;
+JEZ #10;
+JNZ #5;
+CLL #10;
+RET;
+OUT;
+ADD #5;
+ADD 10;
+ADD B;
+SUB #20;
+SUB C;
+SUB 20;
+SWP B, B;
+HLT;

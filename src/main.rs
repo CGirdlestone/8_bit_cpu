@@ -1,4 +1,8 @@
 
+use std::fs::File;
+use std::io::prelude::*;
+use std::env;
+
 struct CPU {
     pc: u8, // program counter
     a: u8, // a(ccumulator) register
@@ -64,11 +68,6 @@ fn get_address(_cpu: &mut CPU, inst: u8, t: u8) -> u16 {
     return address;
 }
 
-fn load_code(_cpu: &mut CPU, code: [u8; 256]){
-    for i in 0..255 {
-        _cpu.rom[i] = code[i];
-    }
-}
 
 fn execute_micro_instruction(_cpu: &mut CPU, step: u8) {
     if _cpu.ir == 0xff {
@@ -357,10 +356,599 @@ fn create_cpu() -> CPU {
     return _cpu;
 }
 
-fn main() {
+struct Token {
+    opcode: u8,
+    identifier: String,
+}
+
+fn create_token(x: u8, s: String) -> Token {
+    let t = Token {
+        opcode: x,
+        identifier: s,
+    };
+    t
+}
+
+fn get_char(s: &String, i: usize) -> char {
+    let chars: Vec<char> = s.chars().skip(i).take(1).collect();
+    let c: char = chars[0];
+    return c;
+}
+
+fn peek_char(s: &String, i: usize) -> char {
+    let chars: Vec<char> = s.chars().skip(i).take(1).collect();
+    let c: char = chars[0];
+    return c;
+}
+
+fn main() ->std::io::Result<()> {
     
+    let args: Vec<String> = env::args().collect();
+    let filename = &args[1];
+
     let mut _cpu = create_cpu();
 
+    let mut f = File::open(filename)?;
+    let mut data_str = String::new();
+    f.read_to_string(&mut data_str)?;
+
+    println!("{}", data_str);
+    let mut tokens: Vec<Token> = Vec::new();
+
+    let mut token = String::new();
+    let data_len = data_str.len();
+    let mut i = 0;
+    loop {
+        if i == data_len { break; }
+        let mut c = get_char(&data_str, i);
+        println!{"{} - {}", i, c};
+        while c.is_whitespace() {
+            i = i + 1;
+            c = get_char(&data_str, i);
+        }
+
+        if c == '%' {
+            while c != '\n' {
+                i = i + 1;
+                c = get_char(&data_str, i);
+            }
+            i = i + 1;
+            c = get_char(&data_str, i);
+        }
+
+        if c.is_ascii_alphanumeric() {
+            if peek_char(&data_str, i + 1).is_ascii_alphanumeric() {
+                if c.is_numeric() {
+                    while c.is_numeric() {
+                        token.push(c);
+                        i = i + 1;
+                        c = get_char(&data_str, i);
+                    }
+                    let t: Token = create_token(0, token.to_string());
+                    tokens.push(t);
+                    token = String::new();
+                    continue;
+                }
+            } else {
+                if peek_char(&data_str, i + 1) == ';' {
+                    token.push(c);
+                    i = i + 1;
+                    let t: Token = create_token(0, token.to_string());
+                    tokens.push(t);
+                    token = String::new();
+                    continue;
+                }
+
+                while c.is_ascii_alphabetic() {
+                    token.push(c);
+                    i = i + 1;
+                    c = get_char(&data_str, i);
+                }
+                let t: Token = create_token(0, token.to_string());
+                tokens.push(t);
+                token = String::new();
+                continue;
+            }
+        }
+
+        token.push(c);
+        i = i + 1;
+
+        match &token[..] {
+            "," => { tokens.push(create_token(0, token.to_string())); token = String::new(); continue; },
+            ";" => { tokens.push(create_token(0, token.to_string())); token = String::new(); continue; },
+            "#" => { tokens.push(create_token(0, token.to_string())); token = String::new(); continue; },
+            _ => {},
+        }
+    }
+
+    for t in &tokens {
+        println!("Token - {}", t.identifier);
+    }
+
+    let mut rom_index: usize = 0;
+    i = 0;
+    let token_length = tokens.len();
+    loop {
+        if i == token_length { break; }
+        let mut t: &Token = &tokens[i];
+        let mut opcode: u8 = 0;
+        println!("Opcode - {}", t.identifier);
+        
+        match &t.identifier[..] {
+            "MOV" => {
+                opcode = opcode | (0x0 << 4); 
+                println!("identifier - {}", t.identifier);
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] == "A" {
+                    opcode = opcode | (0x00);
+                } else if &t.identifier[..] == "B" {
+                    opcode = opcode | (0x01);
+                } else if &t.identifier[..] == "C" {
+                    opcode = opcode | (0x02);
+                } else if &t.identifier[..] == "D" {
+                    opcode = opcode | (0x03);
+                }
+
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != "," {
+                    println!("Expected comma.")
+                }
+
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] == "#" {
+                    opcode = opcode | (0x00 << 2);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    println!("identifier - {}", t.identifier);
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else {
+                    opcode = opcode | (0x01 << 2);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                }
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != ";" {
+                   // handle error
+                }
+            },
+            "STR" =>{
+                opcode = opcode | (0x1 << 4); 
+                println!("identifier - {}", t.identifier);
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] == "A" {
+                    opcode = opcode | (0x00);
+                } else if &t.identifier[..] == "B" {
+                    opcode = opcode | (0x01);
+                } else if &t.identifier[..] == "C" {
+                    opcode = opcode | (0x02);
+                } else if &t.identifier[..] == "D" {
+                    opcode = opcode | (0x03);
+                }
+
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != "," {
+                    println!("Expected comma.")
+                }
+
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] == "#" {
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    println!("identifier - {}", t.identifier);
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else {
+                    // handle error
+                }
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != ";" {
+                   // handle error
+                }
+            },
+            "PSH" =>{
+                opcode = opcode | (0x2 << 4); 
+                println!("identifier - {}", t.identifier);
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] == "A" {
+                    opcode = opcode | (0x00);
+                } else if &t.identifier[..] == "B" {
+                    opcode = opcode | (0x01);
+                } else if &t.identifier[..] == "C" {
+                    opcode = opcode | (0x02);
+                } else if &t.identifier[..] == "D" {
+                    opcode = opcode | (0x03);
+                }
+
+                _cpu.rom[rom_index] = opcode;
+                rom_index = rom_index + 1;
+
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != ";" {
+                   // handle error
+                }
+            },
+            "POP" =>{
+                opcode = opcode | (0x3 << 4); 
+                println!("identifier - {}", t.identifier);
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] == "A" {
+                    opcode = opcode | (0x00);
+                } else if &t.identifier[..] == "B" {
+                    opcode = opcode | (0x01);
+                } else if &t.identifier[..] == "C" {
+                    opcode = opcode | (0x02);
+                } else if &t.identifier[..] == "D" {
+                    opcode = opcode | (0x03);
+                }
+
+                _cpu.rom[rom_index] = opcode;
+                rom_index = rom_index + 1;
+
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != ";" {
+                   // handle error
+                }
+            },
+            "SWP" => {
+                opcode = opcode | (0x4 << 4); 
+                println!("identifier - {}", t.identifier);
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+
+                if &t.identifier[..] == "A" {
+                    opcode = opcode | (0x00 << 2);
+                } else if &t.identifier[..] == "B" {
+                    opcode = opcode | (0x01 << 2);
+                } else if &t.identifier[..] == "C" {
+                    opcode = opcode | (0x02 << 2);
+                } else if &t.identifier[..] == "D" {
+                    opcode = opcode | (0x03 << 2);
+                }
+
+                let reg: String = t.identifier.clone();
+
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != "," {
+                    println!("Expected comma.")
+                }
+
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+
+                if t.identifier == reg {
+                    _cpu.rom[rom_index] = 0xF0; // NOP
+                } else {
+                    if &t.identifier[..] == "A" {
+                        opcode = opcode | (0x00);
+                    } else if &t.identifier[..] == "B" {
+                        opcode = opcode | (0x01);
+                    } else if &t.identifier[..] == "C" {
+                        opcode = opcode | (0x02);
+                    } else if &t.identifier[..] == "D" {
+                        opcode = opcode | (0x03);
+                    }
+                    _cpu.rom[rom_index] = opcode;
+                }
+                rom_index = rom_index + 1;    
+
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != ";" {
+                   // handle error
+                }
+            },
+            "JMP" =>{
+                opcode = opcode | (0x5 << 4); 
+                _cpu.rom[rom_index] = opcode;
+                rom_index = rom_index + 1;
+                
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] == "#" {
+                    i = i + 1;
+                    t = &tokens[i];
+                    println!("identifier - {}", t.identifier);
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else {
+                    // handle error
+                }
+                
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != ";" {
+                   // handle error
+                }
+            },
+            "JEZ" =>{
+                opcode = opcode | (0x6 << 4); 
+                _cpu.rom[rom_index] = opcode;
+                rom_index = rom_index + 1;
+                
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] == "#" {
+                    i = i + 1;
+                    t = &tokens[i];
+                    println!("identifier - {}", t.identifier);
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else {
+                    // handle error
+                }
+                
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != ";" {
+                   // handle error
+                }
+            },
+            "JNZ" =>{
+                opcode = opcode | (0x7 << 4); 
+                _cpu.rom[rom_index] = opcode;
+                rom_index = rom_index + 1;
+                
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] == "#" {
+                    i = i + 1;
+                    t = &tokens[i];
+                    println!("identifier - {}", t.identifier);
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else {
+                    // handle error
+                }
+                
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != ";" {
+                   // handle error
+                }
+            },
+            "CLL" =>{
+                opcode = opcode | (0x8 << 4); 
+                _cpu.rom[rom_index] = opcode;
+                rom_index = rom_index + 1;
+                
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] == "#" {
+                    i = i + 1;
+                    t = &tokens[i];
+                    println!("identifier - {}", t.identifier);
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else {
+                    // handle error
+                }
+                
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != ";" {
+                   // handle error
+                }
+            },
+            "RET" =>{
+                opcode = opcode | (0x9 << 4); 
+                _cpu.rom[rom_index] = opcode;
+                rom_index = rom_index + 1;
+                
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != ";" {
+                   // handle error
+                }
+            },
+            "OUT" => {
+                opcode = opcode | (0xa << 4); 
+                _cpu.rom[rom_index] = opcode;
+                rom_index = rom_index + 1;
+
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != ";" {
+                   // handle error
+                }
+            },
+            "ADD" => {
+                opcode = opcode | (0xb << 4); 
+                println!("identifier - {}", t.identifier);
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] == "A" {
+                    opcode = opcode | (0x00);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if &t.identifier[..] == "B" {
+                    opcode = opcode | (0x01);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if &t.identifier[..] == "C" {
+                    opcode = opcode | (0x02);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if &t.identifier[..] == "D" {
+                    opcode = opcode | (0x03);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if  &t.identifier[..] == "#" {
+                    opcode = opcode | (0x01 << 2);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    println!("identifier - {}", t.identifier);
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else {
+                    opcode = opcode | (0x01 << 3);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                }
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != ";" {
+                   // handle error
+                }
+            },
+            "SUB" => {
+                opcode = opcode | (0xc << 4); 
+                println!("identifier - {}", t.identifier);
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] == "A" {
+                    opcode = opcode | (0x00);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if &t.identifier[..] == "B" {
+                    opcode = opcode | (0x01);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if &t.identifier[..] == "C" {
+                    opcode = opcode | (0x02);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if &t.identifier[..] == "D" {
+                    opcode = opcode | (0x03);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if  &t.identifier[..] == "#" {
+                    opcode = opcode | (0x01 << 2);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    println!("identifier - {}", t.identifier);
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else {
+                    opcode = opcode | (0x01 << 3);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                }
+                i = i + 1;
+                t = &tokens[i];
+                println!("identifier - {}", t.identifier);
+                if &t.identifier[..] != ";" {
+                   // handle error
+                }
+            },
+            "HLT" => { 
+                _cpu.rom[rom_index] = 0xff; 
+                i = i + 1; 
+                t = &tokens[i]; 
+                if &t.identifier[..] != ";" {
+                    // handle error
+                }
+            },
+            _ => {},
+        }
+        i = i + 1;
+        println!("Next Line");
+    }
+
+    for n in 0..50 {
+        println!("{}", _cpu.rom[n]);
+    }
+
+    return Ok(());
+
+    let mut index: usize = 0;
+    for i in (0..data_str.len()).step_by(2) {
+        let x: String =  data_str.chars().skip(i).take(2).collect();
+        if let Ok(y) = u8::from_str_radix(&x, 16) {
+            _cpu.rom[index] = y;
+            index = index + 1;
+        }
+    }
+  
+
+    
+/*
     // set up variables
     _cpu.rom[0] = 0x04;         // load A immediate
     _cpu.rom[1] = 0x00;         // value 0
@@ -428,7 +1016,12 @@ fn main() {
     _cpu.rom[45] = 0x07;        // sub B from A
     _cpu.rom[46] = 0x06;        // store A
     _cpu.rom[47] = 0x03;        // memory location 0x03 'n'
-    _cpu.rom[48] = 0x30;        // return*/
+    _cpu.rom[48] = 0x30;        // return
+
+    // modulo
+	*/ 
         
     execute_program(&mut _cpu);
+
+    Ok(())
 }
