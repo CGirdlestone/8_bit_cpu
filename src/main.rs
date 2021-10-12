@@ -9,6 +9,10 @@ struct CPU {
     b: u8, // b register (general purpose)
     c: u8, // c register (output)
     alu: u8, // arithmetic logic unit
+    _and: u8,
+    _or: u8,
+    _xor: u8,
+    _not: u8,
     mar: u8, // memory address register
     mdr: u8, // memory data register
     ir: u8, // instruction register
@@ -19,6 +23,7 @@ struct CPU {
     rom: [u8; 256], // read only memory - contains the program code
     halt: u8, // program halt signal
     flags: u8, // cpu flags - currently only two are used (zero and carry) XXXX XXZC
+    had_error: bool,
 }
 
 fn xor (a: u8, b: u8) -> u8 {
@@ -86,6 +91,10 @@ fn execute_micro_instruction(_cpu: &mut CPU, step: u8) {
         0x023 => { _cpu.bus = _cpu.mdr; _cpu.c = _cpu.bus; },
         0x00A => { _cpu.alu = add(_cpu.a, _cpu.b, &mut _cpu.flags, 0x00); _cpu.bus = _cpu.alu; _cpu.a = _cpu.bus; },
         0x14A => { _cpu.alu = add(_cpu.a, _cpu.b, &mut _cpu.flags, 0x01); _cpu.bus = _cpu.alu; _cpu.a = _cpu.bus; },
+        0x802 => { _cpu._and = and(_cpu.a, _cpu.b); _cpu.bus = _cpu._and; _cpu.a = _cpu.bus; },
+        0x1002 => { _cpu._or = or(_cpu.a, _cpu.b); _cpu.bus = _cpu._or; _cpu.a = _cpu.bus; },
+        0x2002 => { _cpu._xor = xor(_cpu.a, _cpu.b); _cpu.bus = _cpu._xor; _cpu.a = _cpu.bus; },
+        0x4002 => { _cpu._not = not(_cpu.a); _cpu.bus = _cpu._not; _cpu.a = _cpu.bus; },
         0x037 => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.pc = _cpu.bus; },
         0x01B => { _cpu.bus = _cpu.a; _cpu.c = _cpu.bus; println!("{}", _cpu.c); },
         0x1F2 => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.a = _cpu.bus; _cpu.pc = _cpu.pc + 1; },
@@ -515,7 +524,138 @@ fn load_eeprom(_cpu: &mut CPU) {
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xC8] = 0x000;
     }
 
+    // AND A to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xD0] = 0x501; // B out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xD0] = 0x019; // A out, B in 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xD0] = 0x802; // AND out, A in
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xD0] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xD0] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xD0] = 0x000; 
+    }
+
+    // AND B to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xD1] = 0x802; // AND out, A in 
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xD1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xD1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xD1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xD1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xD1] = 0x000; 
+    }
+
+    // AND C to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xD2] = 0x501; // B  out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xD2] = 0x201; // C out, B in 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xD2] = 0x802; // AND out, A in
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xD2] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xD2] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xD2] = 0x000; 
+    }
+
+    // AND imm to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xD8] = 0x501; // B  out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xD8] = 0x03E; // PC out, MAR in
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xD8] = 0x1F1; // rom out, B in, PC inc
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xD8] = 0x802; // AND out, A in
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xD8] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xD8] = 0x000;
+    }
+
+    // OR A to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xD4] = 0x501; // B out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xD4] = 0x019; // A out, B in 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xD4] = 0x1002; // OR out, A in
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xD4] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xD4] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xD4] = 0x000; 
+    }
+
+    // OR B to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xD5] = 0x1002; // OR out, A in 
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xD5] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xD5] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xD5] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xD5] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xD5] = 0x000; 
+    }
+
+    // OR C to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xD6] = 0x501; // B  out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xD6] = 0x201; // C out, B in 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xD6] = 0x1002; // OR out, A in
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xD6] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xD6] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xD6] = 0x000; 
+    }
+
+    // OR imm to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xDC] = 0x501; // B  out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xDC] = 0x03E; // PC out, MAR in
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xDC] = 0x1F1; // rom out, B in, PC inc
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xDC] = 0x1002; // OR out, A in
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xDC] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xDC] = 0x000;
+    }
+
+    // XOR A to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xE0] = 0x501; // B out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xE0] = 0x019; // A out, B in 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xE0] = 0x2002; // XOR out, A in
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xE0] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xE0] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xE0] = 0x000; 
+    }
+
+    // XOR B to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xE1] = 0x2002; // XOR out, A in 
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xE1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xE1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xE1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xE1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xE1] = 0x000; 
+    }
+
+    // XOR C to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xE2] = 0x501; // B  out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xE2] = 0x201; // C out, B in 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xE2] = 0x2002; // XOR out, A in
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xE2] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xE2] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xE2] = 0x000; 
+    }
+
+    // XOR imm to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xE8] = 0x501; // B  out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xE8] = 0x03E; // PC out, MAR in
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xE8] = 0x1F1; // rom out, B in, PC inc
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xE8] = 0x2002; // XOR out, A in
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xE8] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xE8] = 0x000;
+    }
+
+    // NOT A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xE4] = 0x4002; // NOT out, A in
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xE4] = 0x000; 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xE4] = 0x000; 
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xE4] = 0x000; 
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xE4] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xE4] = 0x000; 
+    }
 }
+
+
 
 fn create_cpu() -> CPU {
     let mut _cpu = CPU {
@@ -524,6 +664,10 @@ fn create_cpu() -> CPU {
         b: 0,
         c: 0,
         alu: 0,
+        _and: 0,
+        _or: 0,
+        _xor: 0,
+        _not: 0,
         mar: 0,
         mdr: 0,
         ir: 0,
@@ -534,19 +678,20 @@ fn create_cpu() -> CPU {
         rom: [0; 256],
         halt: 0x01,
         flags: 0,
+        had_error: false,
     };
     load_eeprom(&mut _cpu);
     return _cpu;
 }
 
 struct Token {
-    opcode: u8,
+    line: u8,
     identifier: String,
 }
 
 fn create_token(x: u8, s: String) -> Token {
     let t = Token {
-        opcode: x,
+        line: x,
         identifier: s,
     };
     t
@@ -576,7 +721,7 @@ fn main() ->std::io::Result<()> {
     f.read_to_string(&mut data_str)?;
 
     let mut tokens: Vec<Token> = Vec::new();
-
+    let mut line_number: u8 = 0;
     let mut token = String::new();
     let data_len = data_str.len();
     let mut i = 0;
@@ -586,12 +731,18 @@ fn main() ->std::io::Result<()> {
         while c.is_whitespace() {
             i = i + 1;
             c = get_char(&data_str, i);
+            if c == '\n' {
+                line_number = line_number + 1;
+            }
         }
 
         if c == '%' {
             while c != '\n' {
                 i = i + 1;
                 c = get_char(&data_str, i);
+            }
+            if c == '\n' {
+                line_number = line_number + 1;
             }
             i = i + 1;
             c = get_char(&data_str, i);
@@ -605,7 +756,7 @@ fn main() ->std::io::Result<()> {
                         i = i + 1;
                         c = get_char(&data_str, i);
                     }
-                    let t: Token = create_token(0, token.to_string());
+                    let t: Token = create_token(line_number, token.to_string());
                     tokens.push(t);
                     token = String::new();
                     continue;
@@ -614,7 +765,7 @@ fn main() ->std::io::Result<()> {
                 if peek_char(&data_str, i + 1) == ';' {
                     token.push(c);
                     i = i + 1;
-                    let t: Token = create_token(0, token.to_string());
+                    let t: Token = create_token(line_number, token.to_string());
                     tokens.push(t);
                     token = String::new();
                     continue;
@@ -625,7 +776,7 @@ fn main() ->std::io::Result<()> {
                     i = i + 1;
                     c = get_char(&data_str, i);
                 }
-                let t: Token = create_token(0, token.to_string());
+                let t: Token = create_token(line_number, token.to_string());
                 tokens.push(t);
                 token = String::new();
                 continue;
@@ -636,9 +787,9 @@ fn main() ->std::io::Result<()> {
         i = i + 1;
 
         match &token[..] {
-            "," => { tokens.push(create_token(0, token.to_string())); token = String::new(); continue; },
-            ";" => { tokens.push(create_token(0, token.to_string())); token = String::new(); continue; },
-            "#" => { tokens.push(create_token(0, token.to_string())); token = String::new(); continue; },
+            "," => { tokens.push(create_token(line_number, token.to_string())); token = String::new(); continue; },
+            ";" => { tokens.push(create_token(line_number, token.to_string())); token = String::new(); continue; },
+            "#" => { tokens.push(create_token(line_number, token.to_string())); token = String::new(); continue; },
             _ => {},
         }
     }
@@ -664,12 +815,16 @@ fn main() ->std::io::Result<()> {
                     opcode = opcode | (0x02);
                 } else if &t.identifier[..] == "D" {
                     opcode = opcode | (0x03);
+                } else {
+                    println!("Invalid operand at line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
 
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != "," {
-                    println!("Expected comma.")
+                    println!("Expected comma at line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
 
                 i = i + 1;
@@ -695,10 +850,13 @@ fn main() ->std::io::Result<()> {
                         rom_index = rom_index + 1;
                     }
                 }
+
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
-                   // handle error
+                    println!("-- {}", &t.identifier);
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
             },
             "STR" =>{
@@ -718,7 +876,8 @@ fn main() ->std::io::Result<()> {
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != "," {
-                    println!("Expected comma.")
+                    println!("Expected comma at line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
 
                 i = i + 1;
@@ -736,10 +895,12 @@ fn main() ->std::io::Result<()> {
                 } else {
                     // handle error
                 }
+                
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
-                   // handle error
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
             },
             "PSH" =>{
@@ -762,7 +923,8 @@ fn main() ->std::io::Result<()> {
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
-                   // handle error
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
             },
             "POP" =>{
@@ -785,7 +947,8 @@ fn main() ->std::io::Result<()> {
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
-                   // handle error
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
             },
             "SWP" => {
@@ -833,7 +996,8 @@ fn main() ->std::io::Result<()> {
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
-                   // handle error
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
             },
             "JMP" =>{
@@ -857,7 +1021,8 @@ fn main() ->std::io::Result<()> {
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
-                   // handle error
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
             },
             "JEZ" =>{
@@ -881,7 +1046,8 @@ fn main() ->std::io::Result<()> {
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
-                   // handle error
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
             },
             "JNZ" =>{
@@ -905,7 +1071,8 @@ fn main() ->std::io::Result<()> {
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
-                   // handle error
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
             },
             "CLL" =>{
@@ -929,7 +1096,8 @@ fn main() ->std::io::Result<()> {
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
-                   // handle error
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
             },
             "RET" =>{
@@ -940,7 +1108,8 @@ fn main() ->std::io::Result<()> {
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
-                   // handle error
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
             },
             "OUT" => {
@@ -951,7 +1120,8 @@ fn main() ->std::io::Result<()> {
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
-                   // handle error
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
             },
             "ADD" => {
@@ -998,7 +1168,8 @@ fn main() ->std::io::Result<()> {
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
-                   // handle error
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
             },
             "SUB" => {
@@ -1045,6 +1216,164 @@ fn main() ->std::io::Result<()> {
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
+                }
+            },
+            "AND" => {
+                opcode = opcode | (0xd << 4); 
+                i = i + 1;
+                t = &tokens[i];
+                if t.identifier[..].starts_with("A") {
+                    opcode = opcode | (0x00);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if t.identifier[..].starts_with("B") {
+                    opcode = opcode | (0x01);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if t.identifier[..].starts_with("C") {
+                    opcode = opcode | (0x02);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if t.identifier[..].starts_with("D") {
+                    opcode = opcode | (0x03);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if  &t.identifier[..] == "#" {
+                    opcode = opcode | (0x01 << 2);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else {
+                    opcode = opcode | (0x01 << 3);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                }
+                i = i + 1;
+                t = &tokens[i];
+                if &t.identifier[..] != ";" {
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
+                }
+            },
+            "OR" => {
+                opcode = opcode | (0xd << 4);
+                opcode = opcode | 0x4; 
+                i = i + 1;
+                t = &tokens[i];
+                if t.identifier[..].starts_with("A") {
+                    opcode = opcode | (0x00);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if t.identifier[..].starts_with("B") {
+                    opcode = opcode | (0x01);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if t.identifier[..].starts_with("C") {
+                    opcode = opcode | (0x02);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if t.identifier[..].starts_with("D") {
+                    opcode = opcode | (0x03);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if  &t.identifier[..] == "#" {
+                    opcode = opcode | (0x01 << 2);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else {
+                    opcode = opcode | (0x01 << 3);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                }
+                i = i + 1;
+                t = &tokens[i];
+                if &t.identifier[..] != ";" {
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
+                }
+            },
+            "XOR" => {
+                opcode = opcode | (0xe << 4); 
+                i = i + 1;
+                t = &tokens[i];
+                if t.identifier[..].starts_with("A") {
+                    opcode = opcode | (0x00);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if t.identifier[..].starts_with("B") {
+                    opcode = opcode | (0x01);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if t.identifier[..].starts_with("C") {
+                    opcode = opcode | (0x02);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if t.identifier[..].starts_with("D") {
+                    opcode = opcode | (0x03);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+                } else if  &t.identifier[..] == "#" {
+                    opcode = opcode | (0x01 << 2);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else {
+                    opcode = opcode | (0x01 << 3);
+                    _cpu.rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        _cpu.rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                }
+                i = i + 1;
+                t = &tokens[i];
+                if &t.identifier[..] != ";" {
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
+                }
+            },
+            "NOT" => {
+                opcode = opcode | (0xe << 4);
+                opcode = opcode | 0x4; 
+                _cpu.rom[rom_index] = opcode;
+                rom_index = rom_index + 1;
+
+                i = i + 1;
+                t = &tokens[i];
+                if &t.identifier[..] != ";" {
                    // handle error
                 }
             },
@@ -1053,7 +1382,8 @@ fn main() ->std::io::Result<()> {
                 i = i + 1; 
                 t = &tokens[i]; 
                 if &t.identifier[..] != ";" {
-                    // handle error
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    _cpu.had_error = true;
                 }
             },
             _ => {},
@@ -1137,8 +1467,9 @@ fn main() ->std::io::Result<()> {
 
     // modulo
 	*/ 
-        
-    execute_program(&mut _cpu);
+    if !_cpu.had_error {
+        execute_program(&mut _cpu);
+    } 
     
     /*println!("---- RAM ----");
     for i in 0..4 {
