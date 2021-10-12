@@ -76,28 +76,40 @@ fn execute_micro_instruction(_cpu: &mut CPU, step: u8) {
     }
 
     match _cpu.eeprom[get_address(_cpu, _cpu.ir, step)  as usize] {
-        0x07C => { _cpu.bus = _cpu.pc; _cpu.mar = _cpu.bus; },
-        0x07D => { _cpu.bus = _cpu.pc; _cpu.mar = _cpu.bus; _cpu.pc = _cpu.pc + 1; },
+        0x03E => { _cpu.bus = _cpu.pc; _cpu.mar = _cpu.bus; },
+        0x1FE => { _cpu.bus = _cpu.pc; _cpu.mar = _cpu.bus; _cpu.pc = _cpu.pc + 1; },
         0x069 => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.ir = _cpu.bus; _cpu.pc = _cpu.pc + 1; },
-        0x06D => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.mar = _cpu.bus; _cpu.pc = _cpu.pc + 1; },
-        0x05A => { _cpu.bus = _cpu.ram[_cpu.mar as usize]; _cpu.mdr = _cpu.bus; },
-        0x044 => { _cpu.bus = _cpu.mdr; _cpu.a = _cpu.bus; },
-        0x042 => { _cpu.bus = _cpu.mdr; _cpu.b = _cpu.bus; },
-        0x014 => { _cpu.alu = add(_cpu.a, _cpu.b, &mut _cpu.flags, 0x00); _cpu.bus = _cpu.alu; _cpu.a = _cpu.bus; },
-        0x314 => { _cpu.alu = add(_cpu.a, _cpu.b, &mut _cpu.flags, 0x01); _cpu.bus = _cpu.alu; _cpu.a = _cpu.bus; },
-        0x06E => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.pc = _cpu.bus; },
-        0x034 => { _cpu.bus = _cpu.a; _cpu.c = _cpu.bus; println!("{}", _cpu.c); },
-        0x065 => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.a = _cpu.bus; _cpu.pc = _cpu.pc + 1; },
-        0x063 => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.b = _cpu.bus; _cpu.pc = _cpu.pc + 1; },
-        0x0B1 => { _cpu.bus = _cpu.a; _cpu.ram[_cpu.mar as usize] = _cpu.bus; },
-        0x0B0 => { _cpu.bus = _cpu.b; _cpu.ram[_cpu.mar as usize] = _cpu.bus; },
-        0x2B0 => { _cpu.bus = _cpu.a; _cpu.ram[(_cpu.sp) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
+        0x1F6 => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.mar = _cpu.bus; _cpu.pc = _cpu.pc + 1; },
+        0x02D => { _cpu.bus = _cpu.ram[_cpu.mar as usize]; _cpu.mdr = _cpu.bus; },
+        0x022 => { _cpu.bus = _cpu.mdr; _cpu.a = _cpu.bus; },
+        0x021 => { _cpu.bus = _cpu.mdr; _cpu.b = _cpu.bus; },
+        0x023 => { _cpu.bus = _cpu.mdr; _cpu.c = _cpu.bus; },
+        0x00A => { _cpu.alu = add(_cpu.a, _cpu.b, &mut _cpu.flags, 0x00); _cpu.bus = _cpu.alu; _cpu.a = _cpu.bus; },
+        0x14A => { _cpu.alu = add(_cpu.a, _cpu.b, &mut _cpu.flags, 0x01); _cpu.bus = _cpu.alu; _cpu.a = _cpu.bus; },
+        0x037 => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.pc = _cpu.bus; },
+        0x01B => { _cpu.bus = _cpu.a; _cpu.c = _cpu.bus; println!("{}", _cpu.c); },
+        0x1F2 => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.a = _cpu.bus; _cpu.pc = _cpu.pc + 1; },
+        0x1F1 => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.b = _cpu.bus; _cpu.pc = _cpu.pc + 1; },
+        0x1F3 => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.c = _cpu.bus; _cpu.pc = _cpu.pc + 1; },
+        0x402 => { _cpu.bus = _cpu.a; _cpu.ram[_cpu.mar as usize] = _cpu.bus; },
+        0x401 => { _cpu.bus = _cpu.b; _cpu.ram[_cpu.mar as usize] = _cpu.bus; },
+        0x403 => { _cpu.bus = _cpu.c; _cpu.ram[_cpu.mar as usize] = _cpu.bus; },
+        0x502 => { _cpu.bus = _cpu.a; _cpu.ram[(_cpu.sp) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
+        0x501 => { _cpu.bus = _cpu.b; _cpu.ram[(_cpu.sp) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
+        0x503 => { _cpu.bus = _cpu.c; _cpu.ram[(_cpu.sp) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
         0xAE1 => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.ram[(_cpu.sp)  as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; _cpu.pc = _cpu.pc + 1; },
-        0x454 => { _cpu.sp = _cpu.sp - 1; _cpu.bus = _cpu.ram[(_cpu.sp) as usize]; _cpu.a = _cpu.bus; },
+        0x0EA => { _cpu.sp = _cpu.sp - 1; _cpu.bus = _cpu.ram[(_cpu.sp) as usize]; _cpu.a = _cpu.bus; },
+        0x0E9 => { _cpu.sp = _cpu.sp - 1; _cpu.bus = _cpu.ram[(_cpu.sp) as usize]; _cpu.b = _cpu.bus; },
+        0x0EB => { _cpu.sp = _cpu.sp - 1; _cpu.bus = _cpu.ram[(_cpu.sp) as usize]; _cpu.c = _cpu.bus; },
         0x2A0 => { _cpu.bus = _cpu.b; _cpu.ram[(_cpu.sp) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
         0x452 => { _cpu.sp = _cpu.sp - 1; _cpu.bus = _cpu.ram[(_cpu.sp) as usize]; _cpu.b = _cpu.bus; },
-        0x2F0 => { _cpu.bus = _cpu.pc; _cpu.ram[(_cpu.sp) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
-        0x45E => { _cpu.sp = _cpu.sp - 1; _cpu.bus = _cpu.ram[(_cpu.sp) as usize]; _cpu.pc = _cpu.bus; },
+        0x1B8 => { _cpu.bus = _cpu.pc; _cpu.ram[(_cpu.sp) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
+        0x0EF => { _cpu.sp = _cpu.sp - 1; _cpu.bus = _cpu.ram[(_cpu.sp) as usize]; _cpu.pc = _cpu.bus; },
+        0x1B0 => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.ram[(_cpu.sp)  as usize] = _cpu.bus; },
+        0x019 => { _cpu.bus = _cpu.a; _cpu.b = _cpu.bus; },
+        0x201 => { _cpu.bus = _cpu.c; _cpu.b = _cpu.bus; },
+        0x1C0 => { _cpu.pc = _cpu.pc + 1; },
+        0x100 => { _cpu.sp = _cpu.sp + 1; },
         _ => return,
     }
 }
@@ -118,7 +130,7 @@ fn load_eeprom(_cpu: &mut CPU) {
     for i in 0..255 {
         // any flags state
         for j in 0..4 {
-            _cpu.eeprom[(j << 11) | i] = 0x07C; // (PC out, MAR in) for all instructions at microstep 0 --> X X 000 XXXX XXXX
+            _cpu.eeprom[(j << 11) | i] = 0x03E; // (PC out, MAR in) for all instructions at microstep 0 --> X X 000 XXXX XXXX
             _cpu.eeprom[(j << 11) | (0x1 << 8) | i] = 0x069; // (rom out, IR in, PC inc) for all instructions at microstep 1 --> X X 001 XXXX XXXX
         }
     }
@@ -133,205 +145,376 @@ fn load_eeprom(_cpu: &mut CPU) {
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xff] = 0x000; // 
     }
 
-    // LOAD A OPCODE 0000 0001
+    // LOAD A
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x01] = 0x07C; // (PC out, MAR in)          X X 010 0000 0001
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x01] = 0x06D; // (rom out, MAR in, pc inc) X X 011 0000 0001
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x01] = 0x05A; // (RAM out, MDR in)         X X 100 0000 0001
-        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x01] = 0x044; // (MDR out, A in)           X X 101 0000 0001
-        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x01] = 0x000; //                           X X 110 0000 0001
-        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x01] = 0x000; //                           X X 111 0000 0001
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x00] = 0x03E; // (PC out, MAR in)          
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x00] = 0x1F6; // (rom out, MAR in, pc inc) 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x00] = 0x02D; // (RAM out, MDR in)         
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x00] = 0x022; // (MDR out, A in)           
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x00] = 0x000; //                           
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x00] = 0x000; //                           
     }
 
-    // LOAD B OPCODE 0000 0010
+    // LOAD B
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x02] = 0x07C; // (PC out, MAR in)
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x02] = 0x06D; // (rom out, MAR in, pc inc)
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x02] = 0x05A; // (RAM out, MDR in)
-        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x02] = 0x042; // (MDR out, B in)
-        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x02] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x02] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x01] = 0x03E; // (PC out, MAR in)          
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x01] = 0x1F6; // (rom out, MAR in, pc inc) 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x01] = 0x02D; // (RAM out, MDR in)         
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x01] = 0x021; // (MDR out, B in)           
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x01] = 0x000; //                           
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x01] = 0x000; //                           
     }
 
-    // ADD OPCODE 0000 0011
+    // LOAD C
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x03] = 0x014; // (ALU out, A in)
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x03] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x03] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x03] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x03] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x03] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x02] = 0x03E; // (PC out, MAR in)          
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x02] = 0x1F6; // (rom out, MAR in, pc inc) 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x02] = 0x02D; // (RAM out, MDR in)         
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x02] = 0x023; // (MDR out, C in)           
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x02] = 0x000; //                           
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x02] = 0x000; //                           
     }
 
-    // SUB OPCODE 0000 0111
+    // LOAD A IMMEDIATE 
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x07] = 0x314; // (SUB, ALU out, A in)
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x07] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x07] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x07] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x07] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x07] = 0x000;
-    }
-
-    // LOAD IMMEDIATE A OPCODE 0000 0100
-    for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x04] = 0x07C; // PC out, MAR in
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x04] = 0x065; // rom out, A in, PC inc
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x04] = 0x03E; // PC out, MAR in
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x04] = 0x1F2; // rom out, A in, PC inc
         _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x04] = 0x000;
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x04] = 0x000;
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x04] = 0x000;
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x04] = 0x000;
     }
 
-    // LOAD IMMEDIATE B OPCODE 0000 0101
+    // LOAD B IMMEDIATE 
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x05] = 0x07C; // PC out, MAR in
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x05] = 0x063; // rom out, B in, PC inc
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x05] = 0x03E; // PC out, MAR in
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x05] = 0x1F1; // rom out, B in, PC inc
         _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x05] = 0x000;
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x05] = 0x000;
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x05] = 0x000;
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x05] = 0x000;
     }
 
-    // PUSH (from register A) OPCODE 0000 1000
+    // LOAD C IMMEDIATE 
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x08] = 0x2B0; // A out, RAM in, SP inc
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x08] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x08] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x08] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x08] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x08] = 0x000;
-    }
-
-    // POP (to register A) OPCODE 0000 1001
-    for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x09] = 0x454; // RAM out, A in, SP dec
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x09] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x09] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x09] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x09] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x09] = 0x000;
-    }
-
-    // PUSH (from register B) OPCODE 0000 1100
-    for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x0c] = 0x2A0; // B out, RAM in, SP inc
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x0c] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x0c] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x0c] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x0c] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x0c] = 0x000;
-    }
-
-    // POP (to register B) OPCODE 0000 1101
-    for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x0d] = 0x452; // RAM out, B in, SP dec
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x0d] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x0d] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x0d] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x0d] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x0d] = 0x000;
-    }
-
-    // PUSH (immediate) OPCODE 0000 1010
-    for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x0A] = 0x07C; // PC out, MAR in
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x0A] = 0xAE1; // rom out, RAM in, PC inc, SP inc
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x0A] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x0A] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x0A] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x0A] = 0x000;
-    }
-
-    // STORE A OPCODE 0000 0110
-    for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x06] = 0x07C; // PC out, MAR in
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x06] = 0x06D; // rom out, MAR in, PC inc
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x06] = 0x0B1; // A out, RAM in
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x06] = 0x03E; // PC out, MAR in
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x06] = 0x1F3; // rom out, C in, PC inc
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x06] = 0x000;
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x06] = 0x000;
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x06] = 0x000;
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x06] = 0x000;
     }
 
-    // STORE B OPCODE 0000 1110
+    // STORE A OPCODE
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x0e] = 0x07C; // PC out, MAR in
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x0e] = 0x06D; // rom out, MAR in, PC inc
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x0e] = 0x0B0; // B out, RAM in
-        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x0e] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x0e] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x0e] = 0x000;
-    }
-
-    // JUMP OPCODE 0001 0000
-    for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x10] = 0x07D; // PC out, MAR in, PC inc
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x10] = 0x06e; // rom out, PC in
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x10] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x10] = 0x03E; // PC out, MAR in
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x10] = 0x1F6; // rom out, MAR in, PC inc
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x10] = 0x402; // A out, RAM in
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x10] = 0x000;
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x10] = 0x000;
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x10] = 0x000;
     }
 
-    // JUMP EQUAL ZERO OPCODE 0001 0001
+    // STORE B OPCODE
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x11] = 0x07D; // PC out, MAR in, PC inc
-        if i == 2 || i == 3 {
-            _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x11] = 0x06e; // rom out, PC in
-        }
-        else {
-            _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x11] = 0x000; // do nothing when the zero flag is not set --> 0 X 011 0001 0010
-        }
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x11] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x11] = 0x03E; // PC out, MAR in
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x11] = 0x1F6; // rom out, MAR in, PC inc
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x11] = 0x401; // B out, RAM in
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x11] = 0x000;
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x11] = 0x000;
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x11] = 0x000;
     }
 
-    // JUMP NOT EQUAL ZERO OPCODE 0001 0010
+    // STORE C OPCODE
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x12] = 0x07D; // PC out, MAR in, PC inc
-        if i == 0 || i == 1 {
-            _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x12] = 0x06e; // rom out, PC in        
-        }
-        else {
-            _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x12] = 0x000; // do nothing when the zero flag is set --> 1 X 011 0001 0010
-        }
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x12] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x12] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x12] = 0x03E; // PC out, MAR in
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x12] = 0x1F6; // rom out, MAR in, PC inc
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x12] = 0x403; // C out, RAM in
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x12] = 0x000; 
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x12] = 0x000;
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x12] = 0x000;
     }
 
-    // CALL OPCODE 0010 0000
+    // PUSH (from register A)
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x20] = 0x07D; // PC out, MAR in, PC inc
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x20] = 0x2F0; // PC out, RAM in, SP inc
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x20] = 0x06E; // rom out, PC in
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x20] = 0x502; // A out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x20] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x20] = 0x000;
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x20] = 0x000;
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x20] = 0x000;
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x20] = 0x000;
     }
 
-    // RETURN OPCODE 0011 0000
+    // PUSH (from register B) 
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x30] = 0x45E; // RAM out, PC in, SP dec
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x30] = 0x000;    
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x21] = 0x501; // B out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x21] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x21] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x21] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x21] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x21] = 0x000;
+    }
+
+    // PUSH (from register C) 
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x22] = 0x503; // C out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x22] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x22] = 0x000; 
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x22] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x22] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x22] = 0x000;
+    }
+
+    // PUSH (immediate)
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x24] = 0x03E; // PC out, MAR in
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x24] = 0x1B0; // ROM out, RAM in
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x24] = 0x1C0; // PC inc
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x24] = 0x100; // SP inc
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x24] = 0x000; 
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x24] = 0x000; 
+    }
+
+    // POP (to register A)
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x30] = 0x0EA; // RAM out, A in, SP dec
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x30] = 0x000;
         _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x30] = 0x000;
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x30] = 0x000;
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x30] = 0x000;
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x30] = 0x000;
     }
 
-    // OUT OPCODE 1000 0000
+    // POP (to register B)
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x80] = 0x034; // A out, C in
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x80] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x80] = 0x000;
-        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x80] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x31] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x31] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x31] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x31] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x31] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x31] = 0x000;
+    }
+
+    // POP (to register C)
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x32] = 0x0EB; // RAM out, C in, SP dec
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x32] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x32] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x32] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x32] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x32] = 0x000;
+    }
+
+    // SWAP A with B
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x41] = 0x502; // A out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x41] = 0x501; // B out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x41] = 0x0EA; // RAM out, A in, SP dec
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x41] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x41] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x41] = 0x000;
+    }
+
+    // SWAP A with C
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x42] = 0x502; // A out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x42] = 0x503; // C out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x42] = 0x0EA; // RAM out, A in, SP dec
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x42] = 0x0EB; // RAM out, C in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x42] = 0x000; 
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x42] = 0x000;
+    }
+
+    // SWAP B with A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x44] = 0x501; // B out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x44] = 0x502; // A out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x44] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x44] = 0x0EA; // RAM out, A in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x44] = 0x000; 
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x44] = 0x000; 
+    }
+
+    // SWAP B with C
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x46] = 0x501; // B out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x46] = 0x503; // C out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x46] = 0x0E9; // RAM out, B in, SP dec 
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x46] = 0x0EB; // RAM out, C in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x46] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x46] = 0x000;
+    }
+
+    // SWAP C with A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x48] = 0x503; // C out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x48] = 0x502; // A out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x48] = 0x0EB; // RAM out, C in, SP dec
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x48] = 0x0EA; // RAM out, A in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x48] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x48] = 0x000;
+    }
+
+    // SWAP C with B
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x49] = 0x503; // C out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x49] = 0x501; // B out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x49] = 0x0EB; // RAM out, C in, SP dec
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x49] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x49] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x49] = 0x000;
+    }
+
+     // JUMP
+     for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x50] = 0x1FE; // PC out, MAR in, PC inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x50] = 0x037; // rom out, PC in
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x50] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x50] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x50] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x50] = 0x000;
+    }
+
+    // JUMP EQUAL ZERO
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x60] = 0x1FE; // PC out, MAR in, PC inc
+        if i == 2 || i == 3 {
+            _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x60] = 0x037; // rom out, PC in
+        }
+        else {
+            _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x60] = 0x000; // do nothing when the zero flag is not set --> 0 X 011 0001 0010
+        }
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x60] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x60] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x60] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x60] = 0x000;
+    }
+
+    // JUMP NOT EQUAL ZERO OPCODE 0001 0010
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x70] = 0x1FE; // PC out, MAR in, PC inc
+        if i == 0 || i == 1 {
+            _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x70] = 0x037; // rom out, PC in        
+        }
+        else {
+            _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x70] = 0x000; // do nothing when the zero flag is set --> 1 X 011 0001 0010
+        }
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x70] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x70] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x70] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x70] = 0x000;
+    }
+
+    // OUT 
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xA0] = 0x01B; // A out, C in
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xA0] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xA0] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xA0] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xA0] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xA0] = 0x000;
+    }
+
+    // CALL 
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x80] = 0x501; // B out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x80] = 0x1FE; // PC out, MAR in, PC inc 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x80] = 0x538; // PC out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x80] = 0x037; // rom out, PC in
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x80] = 0x000;
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x80] = 0x000;
     }
+
+    // RETURN OPCODE 0011 0000
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x90] = 0x0EF; // RAM out, PC in, SP dec
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x90] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x90] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x90] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x90] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x90] = 0x000;
+    }
+
+    // ADD A to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xB0] = 0x501; // B out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xB0] = 0x019; // A out, B in 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xB0] = 0x00A; // ALU out, A in
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xB0] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xB0] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xB0] = 0x000; 
+    }
+
+    // ADD B to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xB1] = 0x00A; // ALU out, A in 
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xB1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xB1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xB1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xB1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xB1] = 0x000; 
+    }
+
+    // ADD C to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xB2] = 0x501; // B  out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xB2] = 0x201; // C out, B in 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xB2] = 0x00A; // ALU out, A in
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xB2] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xB2] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xB2] = 0x000; 
+    }
+
+    // ADD imm to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xB8] = 0x501; // B  out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xB8] = 0x03E; // PC out, MAR in
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xB8] = 0x1F1; // rom out, B in, PC inc
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xB8] = 0x00A; // ALU out, A in
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xB8] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xB8] = 0x000;
+    }
+
+    // SUB A to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xC0] = 0x501; // B out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xC0] = 0x019; // A out, B in 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xC0] = 0x14A; // ALU out, A in, SUB
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xC0] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xC0] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xC0] = 0x000; 
+    }
+
+    // SUB B to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xC1] = 0x14A; // ALU out, A in, SUB
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xC1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xC1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xC1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xC1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xC1] = 0x000; 
+    }
+
+    // SUB C to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xC2] = 0x501; // B  out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xC2] = 0x201; // C out, B in 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xC2] = 0x14A; // ALU out, A in, SUB
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xC2] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xC2] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xC2] = 0x000; 
+    }
+
+    // SUB imm to A
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xC8] = 0x501; // B  out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xC8] = 0x03E; // PC out, MAR in
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xC8] = 0x1F1; // rom out, B in, PC inc
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xC8] = 0x14A; // ALU out, A in, SUB
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xC8] = 0x0E9; // RAM out, B in, SP dec
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xC8] = 0x000;
+    }
+
 }
 
 fn create_cpu() -> CPU {
@@ -392,7 +575,6 @@ fn main() ->std::io::Result<()> {
     let mut data_str = String::new();
     f.read_to_string(&mut data_str)?;
 
-    println!("{}", data_str);
     let mut tokens: Vec<Token> = Vec::new();
 
     let mut token = String::new();
@@ -401,7 +583,6 @@ fn main() ->std::io::Result<()> {
     loop {
         if i == data_len { break; }
         let mut c = get_char(&data_str, i);
-        println!{"{} - {}", i, c};
         while c.is_whitespace() {
             i = i + 1;
             c = get_char(&data_str, i);
@@ -462,10 +643,6 @@ fn main() ->std::io::Result<()> {
         }
     }
 
-    for t in &tokens {
-        println!("Token - {}", t.identifier);
-    }
-
     let mut rom_index: usize = 0;
     i = 0;
     let token_length = tokens.len();
@@ -473,15 +650,12 @@ fn main() ->std::io::Result<()> {
         if i == token_length { break; }
         let mut t: &Token = &tokens[i];
         let mut opcode: u8 = 0;
-        println!("Opcode - {}", t.identifier);
         
         match &t.identifier[..] {
             "MOV" => {
                 opcode = opcode | (0x0 << 4); 
-                println!("identifier - {}", t.identifier);
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] == "A" {
                     opcode = opcode | (0x00);
                 } else if &t.identifier[..] == "B" {
@@ -494,14 +668,12 @@ fn main() ->std::io::Result<()> {
 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != "," {
                     println!("Expected comma.")
                 }
 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] == "#" {
                     opcode = opcode | (0x00 << 2);
                     _cpu.rom[rom_index] = opcode;
@@ -509,7 +681,6 @@ fn main() ->std::io::Result<()> {
 
                     i = i + 1;
                     t = &tokens[i];
-                    println!("identifier - {}", t.identifier);
                     if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
                         _cpu.rom[rom_index] = y;
                         rom_index = rom_index + 1;
@@ -526,17 +697,14 @@ fn main() ->std::io::Result<()> {
                 }
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != ";" {
                    // handle error
                 }
             },
             "STR" =>{
                 opcode = opcode | (0x1 << 4); 
-                println!("identifier - {}", t.identifier);
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] == "A" {
                     opcode = opcode | (0x00);
                 } else if &t.identifier[..] == "B" {
@@ -549,21 +717,18 @@ fn main() ->std::io::Result<()> {
 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != "," {
                     println!("Expected comma.")
                 }
 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] == "#" {
                     _cpu.rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
 
                     i = i + 1;
                     t = &tokens[i];
-                    println!("identifier - {}", t.identifier);
                     if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
                         _cpu.rom[rom_index] = y;
                         rom_index = rom_index + 1;
@@ -573,17 +738,14 @@ fn main() ->std::io::Result<()> {
                 }
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != ";" {
                    // handle error
                 }
             },
             "PSH" =>{
                 opcode = opcode | (0x2 << 4); 
-                println!("identifier - {}", t.identifier);
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] == "A" {
                     opcode = opcode | (0x00);
                 } else if &t.identifier[..] == "B" {
@@ -599,17 +761,14 @@ fn main() ->std::io::Result<()> {
 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != ";" {
                    // handle error
                 }
             },
             "POP" =>{
                 opcode = opcode | (0x3 << 4); 
-                println!("identifier - {}", t.identifier);
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] == "A" {
                     opcode = opcode | (0x00);
                 } else if &t.identifier[..] == "B" {
@@ -625,17 +784,14 @@ fn main() ->std::io::Result<()> {
 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != ";" {
                    // handle error
                 }
             },
             "SWP" => {
                 opcode = opcode | (0x4 << 4); 
-                println!("identifier - {}", t.identifier);
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
 
                 if &t.identifier[..] == "A" {
                     opcode = opcode | (0x00 << 2);
@@ -651,14 +807,12 @@ fn main() ->std::io::Result<()> {
 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != "," {
                     println!("Expected comma.")
                 }
 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
 
                 if t.identifier == reg {
                     _cpu.rom[rom_index] = 0xF0; // NOP
@@ -678,7 +832,6 @@ fn main() ->std::io::Result<()> {
 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != ";" {
                    // handle error
                 }
@@ -690,11 +843,9 @@ fn main() ->std::io::Result<()> {
                 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] == "#" {
                     i = i + 1;
                     t = &tokens[i];
-                    println!("identifier - {}", t.identifier);
                     if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
                         _cpu.rom[rom_index] = y;
                         rom_index = rom_index + 1;
@@ -705,7 +856,6 @@ fn main() ->std::io::Result<()> {
                 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != ";" {
                    // handle error
                 }
@@ -717,11 +867,9 @@ fn main() ->std::io::Result<()> {
                 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] == "#" {
                     i = i + 1;
                     t = &tokens[i];
-                    println!("identifier - {}", t.identifier);
                     if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
                         _cpu.rom[rom_index] = y;
                         rom_index = rom_index + 1;
@@ -732,7 +880,6 @@ fn main() ->std::io::Result<()> {
                 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != ";" {
                    // handle error
                 }
@@ -744,11 +891,9 @@ fn main() ->std::io::Result<()> {
                 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] == "#" {
                     i = i + 1;
                     t = &tokens[i];
-                    println!("identifier - {}", t.identifier);
                     if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
                         _cpu.rom[rom_index] = y;
                         rom_index = rom_index + 1;
@@ -759,7 +904,6 @@ fn main() ->std::io::Result<()> {
                 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != ";" {
                    // handle error
                 }
@@ -771,11 +915,9 @@ fn main() ->std::io::Result<()> {
                 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] == "#" {
                     i = i + 1;
                     t = &tokens[i];
-                    println!("identifier - {}", t.identifier);
                     if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
                         _cpu.rom[rom_index] = y;
                         rom_index = rom_index + 1;
@@ -786,7 +928,6 @@ fn main() ->std::io::Result<()> {
                 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != ";" {
                    // handle error
                 }
@@ -798,7 +939,6 @@ fn main() ->std::io::Result<()> {
                 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != ";" {
                    // handle error
                 }
@@ -810,30 +950,27 @@ fn main() ->std::io::Result<()> {
 
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != ";" {
                    // handle error
                 }
             },
             "ADD" => {
                 opcode = opcode | (0xb << 4); 
-                println!("identifier - {}", t.identifier);
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
-                if &t.identifier[..] == "A" {
+                if t.identifier[..].starts_with("A") {
                     opcode = opcode | (0x00);
                     _cpu.rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
-                } else if &t.identifier[..] == "B" {
+                } else if t.identifier[..].starts_with("B") {
                     opcode = opcode | (0x01);
                     _cpu.rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
-                } else if &t.identifier[..] == "C" {
+                } else if t.identifier[..].starts_with("C") {
                     opcode = opcode | (0x02);
                     _cpu.rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
-                } else if &t.identifier[..] == "D" {
+                } else if t.identifier[..].starts_with("D") {
                     opcode = opcode | (0x03);
                     _cpu.rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
@@ -844,7 +981,6 @@ fn main() ->std::io::Result<()> {
 
                     i = i + 1;
                     t = &tokens[i];
-                    println!("identifier - {}", t.identifier);
                     if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
                         _cpu.rom[rom_index] = y;
                         rom_index = rom_index + 1;
@@ -861,30 +997,27 @@ fn main() ->std::io::Result<()> {
                 }
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != ";" {
                    // handle error
                 }
             },
             "SUB" => {
                 opcode = opcode | (0xc << 4); 
-                println!("identifier - {}", t.identifier);
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
-                if &t.identifier[..] == "A" {
+                if t.identifier[..].starts_with("A") {
                     opcode = opcode | (0x00);
                     _cpu.rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
-                } else if &t.identifier[..] == "B" {
+                } else if t.identifier[..].starts_with("B") {
                     opcode = opcode | (0x01);
                     _cpu.rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
-                } else if &t.identifier[..] == "C" {
+                } else if t.identifier[..].starts_with("C") {
                     opcode = opcode | (0x02);
                     _cpu.rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
-                } else if &t.identifier[..] == "D" {
+                } else if t.identifier[..].starts_with("D") {
                     opcode = opcode | (0x03);
                     _cpu.rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
@@ -895,7 +1028,6 @@ fn main() ->std::io::Result<()> {
 
                     i = i + 1;
                     t = &tokens[i];
-                    println!("identifier - {}", t.identifier);
                     if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
                         _cpu.rom[rom_index] = y;
                         rom_index = rom_index + 1;
@@ -912,7 +1044,6 @@ fn main() ->std::io::Result<()> {
                 }
                 i = i + 1;
                 t = &tokens[i];
-                println!("identifier - {}", t.identifier);
                 if &t.identifier[..] != ";" {
                    // handle error
                 }
@@ -928,25 +1059,11 @@ fn main() ->std::io::Result<()> {
             _ => {},
         }
         i = i + 1;
-        println!("Next Line");
     }
 
-    for n in 0..50 {
-        println!("{}", _cpu.rom[n]);
-    }
-
-    return Ok(());
-
-    let mut index: usize = 0;
-    for i in (0..data_str.len()).step_by(2) {
-        let x: String =  data_str.chars().skip(i).take(2).collect();
-        if let Ok(y) = u8::from_str_radix(&x, 16) {
-            _cpu.rom[index] = y;
-            index = index + 1;
-        }
-    }
-  
-
+    /*for i in 0..127 {
+        println!("ROM [{}] -- {}", i, _cpu.rom[i]);
+    }*/
     
 /*
     // set up variables
@@ -1022,6 +1139,10 @@ fn main() ->std::io::Result<()> {
 	*/ 
         
     execute_program(&mut _cpu);
-
+    
+    /*println!("---- RAM ----");
+    for i in 0..4 {
+        println!("RAM[{}] --- {}", i, _cpu.ram[i]);
+    }*/
     Ok(())
 }
