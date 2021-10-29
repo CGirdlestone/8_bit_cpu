@@ -8,6 +8,9 @@ MOV A, 0;
 STR A, #2;
 MOV A, c;
 STR A, #3;
+
+
+:loop
 MOV A, #0;
 MOV B, #1;
 ADD B;
@@ -18,5 +21,5 @@ STR B, #0;
 MOV A, #3;
 SUB 1;
 STR A, #3;
-JNZ #12;
+JNZ loop;
 HLT;

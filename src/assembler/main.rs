@@ -3,6 +3,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::env;
 
+use std::collections::HashMap;
+
 struct Token {
     line: u8,
     identifier: String,
@@ -37,6 +39,7 @@ fn main() ->std::io::Result<()> {
     let mut data_str = String::new();
     f.read_to_string(&mut data_str)?;
 
+    let mut labels = HashMap::new();
     let mut tokens: Vec<Token> = Vec::new();
     let mut line_number: u8 = 0;
     let mut token = String::new();
@@ -107,15 +110,165 @@ fn main() ->std::io::Result<()> {
             "," => { tokens.push(create_token(line_number, token.to_string())); token = String::new(); continue; },
             ";" => { tokens.push(create_token(line_number, token.to_string())); token = String::new(); continue; },
             "#" => { tokens.push(create_token(line_number, token.to_string())); token = String::new(); continue; },
+            ":" => { tokens.push(create_token(line_number, token.to_string())); token = String::new(); continue; },
             _ => {},
         }
     }
 
     let mut rom_index: usize = 0;
-    let mut rom: [u8; 256] = [0; 256];
-    let mut had_error: bool = false;
     i = 0;
     let token_length = tokens.len();
+    
+    loop {
+        if i == token_length { break; }
+        let mut t: &Token = &tokens[i];
+        match &t.identifier[..] {
+            "MOV" => { 
+                i = i + 3;
+                t = &tokens[i];
+                if &t.identifier[..] == "#" {
+                     i = i + 1;
+                }
+                i = i + 1;
+                rom_index = rom_index + 2; 
+            },
+            "STR" => { 
+                i = i + 3;
+                t = &tokens[i];
+                if &t.identifier[..] == "#" {
+                     i = i + 1;
+                     rom_index = rom_index + 2;
+                } 
+                i = i + 1;
+            },
+            "PSH" => {
+                i = i + 2;
+                rom_index = rom_index + 1;
+            },
+            "POP" => {
+                i = i + 2;
+                rom_index = rom_index + 1;
+            },
+            "SWP" => {
+                i = i + 4;
+                rom_index = rom_index + 1;
+            },
+            "JMP" => {
+                i = i + 3;
+                rom_index = rom_index + 2;
+            },
+            "JEZ" => {
+                i = i + 3;
+                rom_index = rom_index + 2;
+            },
+            "JNZ" => {
+                i = i + 3;
+                rom_index = rom_index + 2;
+            },
+            "CLL" => {
+                i = i + 3;
+                rom_index = rom_index + 2;
+            },
+            "RET" => {
+                i = i + 1;
+                rom_index = rom_index + 1;
+            },
+            "OUT" => {
+                i = i + 1;
+                rom_index = rom_index + 1;
+            },
+            "ADD" => {
+                i = i + 1;
+                if t.identifier[..].starts_with("A") || t.identifier[..].starts_with("B") || t.identifier[..].starts_with("C") || t.identifier[..].starts_with("D") {
+                    i = i + 1;
+                    rom_index = rom_index + 1;
+                } else if  &t.identifier[..] == "#" {
+                    i = i + 2;
+                    rom_index = rom_index + 2;
+                } else {
+                    i = i + 1;
+                    rom_index = rom_index + 2;
+                }
+            },
+            "SUB" => {
+                i = i + 1;
+                if t.identifier[..].starts_with("A") || t.identifier[..].starts_with("B") || t.identifier[..].starts_with("C") || t.identifier[..].starts_with("D") {
+                    i = i + 1;
+                    rom_index = rom_index + 1;
+                } else if  &t.identifier[..] == "#" {
+                    i = i + 2;
+                    rom_index = rom_index + 2;
+                } else {
+                    i = i + 1;
+                    rom_index = rom_index + 2;
+                }
+            },
+            "AND" => {
+                i = i + 1;
+                if t.identifier[..].starts_with("A") || t.identifier[..].starts_with("B") || t.identifier[..].starts_with("C") || t.identifier[..].starts_with("D") {
+                    i = i + 1;
+                    rom_index = rom_index + 1;
+                } else if  &t.identifier[..] == "#" {
+                    i = i + 2;
+                    rom_index = rom_index + 2;
+                } else {
+                    i = i + 1;
+                    rom_index = rom_index + 2;
+                }
+            },
+            "OR" => {
+                i = i + 1;
+                if t.identifier[..].starts_with("A") || t.identifier[..].starts_with("B") || t.identifier[..].starts_with("C") || t.identifier[..].starts_with("D") {
+                    i = i + 1;
+                    rom_index = rom_index + 1;
+                } else if  &t.identifier[..] == "#" {
+                    i = i + 2;
+                    rom_index = rom_index + 2;
+                } else {
+                    i = i + 1;
+                    rom_index = rom_index + 2;
+                }
+            },
+            "XOR" => {
+                i = i + 1;
+                if t.identifier[..].starts_with("A") || t.identifier[..].starts_with("B") || t.identifier[..].starts_with("C") || t.identifier[..].starts_with("D") {
+                    i = i + 1;
+                    rom_index = rom_index + 1;
+                } else if  &t.identifier[..] == "#" {
+                    i = i + 2;
+                    rom_index = rom_index + 2;
+                } else {
+                    i = i + 1;
+                    rom_index = rom_index + 2;
+                }
+            },
+            "NOT" => {
+                i = i + 1;
+                rom_index = rom_index + 1;
+            },
+            "HLT" => {
+                i = i + 1;
+            },
+            ":" => {
+                i = i + 1;
+                t = &tokens[i];
+                labels.insert(t.identifier[..].to_string(), rom_index);
+                i = i + 1;
+            },
+            _ => {},
+        }
+        i = i + 1;
+    }
+
+    for (label, pos) in &labels {
+        println!("{} - {}", label, pos);
+    }
+    
+    rom_index = 0;
+    i = 0;
+    let mut rom: [u8; 256] = [0; 256];
+    let mut had_error: bool = false;
+
     loop {
         if i == token_length { break; }
         let mut t: &Token = &tokens[i];
@@ -383,6 +536,9 @@ fn main() ->std::io::Result<()> {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
+                } else if labels.contains_key(&t.identifier[..].to_string()) {
+                    rom[rom_index] = labels[&t.identifier[..].to_string()] as u8;
+                    rom_index = rom_index + 1;
                 } else {
                     // handle error
                 }
@@ -729,3 +885,4 @@ fn main() ->std::io::Result<()> {
 
     Ok(())
 }
+

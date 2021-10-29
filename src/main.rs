@@ -803,31 +803,6 @@ fn create_cpu() -> CPU {
     return _cpu;
 }
 
-struct Token {
-    line: u8,
-    identifier: String,
-}
-
-fn create_token(x: u8, s: String) -> Token {
-    let t = Token {
-        line: x,
-        identifier: s,
-    };
-    t
-}
-
-fn get_char(s: &String, i: usize) -> char {
-    let chars: Vec<char> = s.chars().skip(i).take(1).collect();
-    let c: char = chars[0];
-    return c;
-}
-
-fn peek_char(s: &String, i: usize) -> char {
-    let chars: Vec<char> = s.chars().skip(i).take(1).collect();
-    let c: char = chars[0];
-    return c;
-}
-
 fn main() ->std::io::Result<()> {
     
     let args: Vec<String> = env::args().collect();
@@ -842,11 +817,6 @@ fn main() ->std::io::Result<()> {
    for i in 0..256 {
         _cpu.rom[i] = rom[i];
     }
-
-    
-
-    
-    
 
     if !_cpu.had_error {
         execute_program(&mut _cpu);
