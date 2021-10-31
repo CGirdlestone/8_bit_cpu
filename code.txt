@@ -1,25 +1,47 @@
-MOV A, 0;
-STR A, #0;
+MOV A, #80; /128
 OUT;
-MOV A, 1;
-STR A, #1;
-OUT;
-MOV A, 0;
-STR A, #2;
-MOV A, c;
-STR A, #3;
 
+MOV A, 0;
+STR A, $0;
+CALL output;
+MOV A, 1;
+STR A, $1;
+OUT;
+MOV A, 0;
+STR A, $2;
+MOV A, #c;
+STR A, $3;
 
 :loop
-MOV A, #0;
-MOV B, #1;
+MOV A, $0;
+MOV B, $1;
 ADD B;
 OUT;
-STR A, #2;
-STR A, #1;
-STR B, #0;
-MOV A, #3;
+STR A, $2;
+STR A, $1;
+STR B, $0;
+MOV A, $3;
 SUB 1;
-STR A, #3;
+STR A, $3;
 JNZ loop;
-HLT;
+
+MOV A, 10;
+MOV B, 10;
+MOV D, 10;
+OUT;
+CALL mul;
+
+HALT;
+
+:output
+OUT;
+RET;
+
+:mul
+DEC;
+:start
+ADD B;
+OUT;
+DEC;
+JNZ start;
+RET;

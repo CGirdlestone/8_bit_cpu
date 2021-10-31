@@ -32,6 +32,8 @@ const RAM_IN: u16 = 0x1 << 10;
 const XOR_OUT: u16 = 0x1 << 11;
 const D_IN: u16 = 0x1 << 12;
 const D_OUT: u16 = 0x1 << 13;
+const D_INC: u16 = 0x1 << 14;
+const D_DEC: u16 = 0x1 << 15;
 
 
 struct CPU {
@@ -84,7 +86,7 @@ fn add (a: u8, mut b: u8, flags: &mut u8, subtract: u8) -> u8 {
 
     for bit in 0..8 {
         let out: u8 = xor(xor((a >> bit) & 0x01, (b >> bit) & 0x01), carry);
-        sum |= out << bit;
+        sum = sum | (out << bit);
         carry = or(and((a >> bit) & 0x01, (b >> bit) & 0x01), and(xor((a >> bit) & 0x01, (b >> bit) & 0x01), carry));
     }
 
@@ -126,10 +128,10 @@ fn execute_micro_instruction(_cpu: &mut CPU, step: u8) {
         micro if micro == MDR_OUT | D_IN /*0x1020*/ => { _cpu.bus = _cpu.mdr; _cpu.d = _cpu.bus; },
         micro if micro == ALU_OUT | A_IN /*0x00A*/ => { _cpu.alu = add(_cpu.a, _cpu.b, &mut _cpu.flags, 0x00); _cpu.bus = _cpu.alu; _cpu.a = _cpu.bus; },
         micro if micro == ALU_OUT | A_IN | SUB /*0x14A*/ => { _cpu.alu = add(_cpu.a, _cpu.b, &mut _cpu.flags, 0x01); _cpu.bus = _cpu.alu; _cpu.a = _cpu.bus; },
-        micro if micro == AND_OUT | A_IN /*0x182*/  => { _cpu._and = and(_cpu.a, _cpu.b); _cpu.bus = _cpu._and; _cpu.a = _cpu.bus; },
-        micro if micro == OR_OUT | A_IN /*0x082*/  => { _cpu._or = or(_cpu.a, _cpu.b); _cpu.bus = _cpu._or; _cpu.a = _cpu.bus; },
-        micro if micro == XOR_OUT | A_IN /*0x802*/  => { _cpu._xor = xor(_cpu.a, _cpu.b); _cpu.bus = _cpu._xor; _cpu.a = _cpu.bus; },
-        micro if micro == NOT_OUT | A_IN /*0x042*/  => { _cpu._not = not(_cpu.a); _cpu.bus = _cpu._not; _cpu.a = _cpu.bus; },
+        micro if micro == AND_OUT | A_IN /*0x182*/  => { _cpu._and = and(_cpu.a, _cpu.b); _cpu.bus = _cpu._and; _cpu.a = _cpu.bus; _cpu.flags = 0x00; if _cpu.a == 0 { _cpu.flags = 0; _cpu.flags = 0x01 << 1; }},
+        micro if micro == OR_OUT | A_IN /*0x082*/  => { _cpu._or = or(_cpu.a, _cpu.b); _cpu.bus = _cpu._or; _cpu.a = _cpu.bus; _cpu.flags = 0x00; if _cpu.a == 0 { _cpu.flags = 0; _cpu.flags = 0x01 << 1; }},
+        micro if micro == XOR_OUT | A_IN /*0x802*/  => { _cpu._xor = xor(_cpu.a, _cpu.b); _cpu.bus = _cpu._xor; _cpu.a = _cpu.bus; _cpu.flags = 0x00; if _cpu.a == 0 { _cpu.flags = 0; _cpu.flags = 0x01 << 1; }},
+        micro if micro == NOT_OUT | A_IN /*0x042*/  => { _cpu._not = not(_cpu.a); _cpu.bus = _cpu._not; _cpu.a = _cpu.bus; _cpu.flags = 0x00; if _cpu.a == 0 { _cpu.flags = 0; _cpu.flags = 0x01 << 1; }},
         micro if micro == ROM_OUT | PC_IN /*0x037*/ => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.pc = _cpu.bus; },
         micro if micro == A_OUT | C_IN /*0x01B*/ => { _cpu.bus = _cpu.a; _cpu.c = _cpu.bus; println!("{}", _cpu.c); },
         micro if micro == ROM_OUT | A_IN | PC_INC /*0x1F2*/ => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.a = _cpu.bus; _cpu.pc = _cpu.pc + 1; },
@@ -157,6 +159,8 @@ fn execute_micro_instruction(_cpu: &mut CPU, step: u8) {
         micro if micro == C_OUT | B_IN /*0x219*/ => { _cpu.bus = _cpu.c; _cpu.b = _cpu.bus; },
         micro if micro == PC_INC /*0x1C0*/ => { _cpu.pc = _cpu.pc + 1; },
         micro if micro == SP_INC /*0x100*/ => { _cpu.sp = _cpu.sp + 1; },
+        micro if micro == D_DEC => { _cpu.d = _cpu.d - 1; _cpu.flags = 0x00; if _cpu.d == 0 { _cpu.flags = 0; _cpu.flags = 0x01 << 1; } },
+        micro if micro == D_INC => { _cpu.d = _cpu.d + 1; },
         _ => return,
     }
 }
@@ -770,6 +774,26 @@ fn load_eeprom(_cpu: &mut CPU) {
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xE4] = 0x000; 
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xE4] = 0x000;
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xE4] = 0x000; 
+    }
+
+    // DEC D
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xA1] = D_DEC; 
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xA1] = 0x000; 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xA1] = 0x000; 
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xA1] = 0x000; 
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xA1] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xA1] = 0x000; 
+    }
+
+    // INC D
+    for i in 0..4 {
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xA2] = D_INC;
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xA2] = 0x000; 
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xA2] = 0x000; 
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xA2] = 0x000; 
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xA2] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xA2] = 0x000; 
     }
 }
 

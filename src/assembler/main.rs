@@ -56,7 +56,7 @@ fn main() ->std::io::Result<()> {
             }
         }
 
-        if c == '%' {
+        if c == '/' {
             while c != '\n' {
                 i = i + 1;
                 c = get_char(&data_str, i);
@@ -108,9 +108,11 @@ fn main() ->std::io::Result<()> {
 
         match &token[..] {
             "," => { tokens.push(create_token(line_number, token.to_string())); token = String::new(); continue; },
-            ";" => { tokens.push(create_token(line_number, token.to_string())); token = String::new(); continue; },
-            "#" => { tokens.push(create_token(line_number, token.to_string())); token = String::new(); continue; },
+            "$" => { tokens.push(create_token(line_number, token.to_string())); token = String::new(); continue; },
             ":" => { tokens.push(create_token(line_number, token.to_string())); token = String::new(); continue; },
+            "#" => { tokens.push(create_token(line_number, token.to_string())); token = String::new(); continue; },
+            "%" => { tokens.push(create_token(line_number, token.to_string())); token = String::new(); continue; },
+            ";" => { tokens.push(create_token(line_number, token.to_string())); token = String::new(); continue; },
             _ => {},
         }
     }
@@ -126,22 +128,22 @@ fn main() ->std::io::Result<()> {
             "MOV" => { 
                 i = i + 3;
                 t = &tokens[i];
-                if &t.identifier[..] == "#" {
+                if &t.identifier[..] == "$" ||  &t.identifier[..] == "#" ||  &t.identifier[..] == "%" {
                      i = i + 1;
                 }
-                i = i + 1;
-                rom_index = rom_index + 2; 
+                rom_index = rom_index + 2;
+                i = i + 1; 
             },
             "STR" => { 
                 i = i + 3;
                 t = &tokens[i];
-                if &t.identifier[..] == "#" {
+                if &t.identifier[..] == "$" ||  &t.identifier[..] == "#" ||  &t.identifier[..] == "%"{
                      i = i + 1;
                      rom_index = rom_index + 2;
                 } 
                 i = i + 1;
             },
-            "PSH" => {
+            "PUSH" => {
                 i = i + 2;
                 rom_index = rom_index + 1;
             },
@@ -154,35 +156,56 @@ fn main() ->std::io::Result<()> {
                 rom_index = rom_index + 1;
             },
             "JMP" => {
-                i = i + 3;
+                i = i + 1;
+                t = &tokens[i];
+                if &t.identifier[..] == "$" ||  &t.identifier[..] == "#" ||  &t.identifier[..] == "%"{
+                    i = i + 1;
+                }
                 rom_index = rom_index + 2;
+                i = i + 1;
             },
             "JEZ" => {
-                i = i + 3;
+                i = i + 1;
+                t = &tokens[i];
+                if &t.identifier[..] == "$" ||  &t.identifier[..] == "#" ||  &t.identifier[..] == "%"{
+                    i = i + 1;
+                }
                 rom_index = rom_index + 2;
+                i = i + 1;
             },
             "JNZ" => {
-                i = i + 3;
+                i = i + 1;
+                t = &tokens[i];
+                if &t.identifier[..] == "$" ||  &t.identifier[..] == "#" ||  &t.identifier[..] == "%"{
+                    i = i + 1;
+                }
                 rom_index = rom_index + 2;
+                i = i + 1;
             },
-            "CLL" => {
-                i = i + 3;
+            "CALL" => {
+                i = i + 1;
+                t = &tokens[i];
+                if &t.identifier[..] == "$" ||  &t.identifier[..] == "#" ||  &t.identifier[..] == "%"{
+                    i = i + 1;
+                }
                 rom_index = rom_index + 2;
+                i = i + 1;
             },
             "RET" => {
-                i = i + 1;
                 rom_index = rom_index + 1;
+                i = i + 1;
             },
             "OUT" => {
-                i = i + 1;
                 rom_index = rom_index + 1;
+                i = i + 1;
             },
             "ADD" => {
                 i = i + 1;
+                t = &tokens[i];
                 if t.identifier[..].starts_with("A") || t.identifier[..].starts_with("B") || t.identifier[..].starts_with("C") || t.identifier[..].starts_with("D") {
-                    i = i + 1;
                     rom_index = rom_index + 1;
-                } else if  &t.identifier[..] == "#" {
+                    i = i + 1;
+                } else if  &t.identifier[..] == "$" ||  &t.identifier[..] == "#" ||  &t.identifier[..] == "%"{
                     i = i + 2;
                     rom_index = rom_index + 2;
                 } else {
@@ -192,10 +215,11 @@ fn main() ->std::io::Result<()> {
             },
             "SUB" => {
                 i = i + 1;
+                t = &tokens[i];
                 if t.identifier[..].starts_with("A") || t.identifier[..].starts_with("B") || t.identifier[..].starts_with("C") || t.identifier[..].starts_with("D") {
-                    i = i + 1;
                     rom_index = rom_index + 1;
-                } else if  &t.identifier[..] == "#" {
+                    i = i + 1;
+                } else if  &t.identifier[..] == "$" ||  &t.identifier[..] == "#" ||  &t.identifier[..] == "%"{
                     i = i + 2;
                     rom_index = rom_index + 2;
                 } else {
@@ -205,10 +229,11 @@ fn main() ->std::io::Result<()> {
             },
             "AND" => {
                 i = i + 1;
+                t = &tokens[i];
                 if t.identifier[..].starts_with("A") || t.identifier[..].starts_with("B") || t.identifier[..].starts_with("C") || t.identifier[..].starts_with("D") {
-                    i = i + 1;
                     rom_index = rom_index + 1;
-                } else if  &t.identifier[..] == "#" {
+                    i = i + 1;
+                } else if  &t.identifier[..] == "$" ||  &t.identifier[..] == "#" ||  &t.identifier[..] == "%"{
                     i = i + 2;
                     rom_index = rom_index + 2;
                 } else {
@@ -218,10 +243,11 @@ fn main() ->std::io::Result<()> {
             },
             "OR" => {
                 i = i + 1;
+                t = &tokens[i];
                 if t.identifier[..].starts_with("A") || t.identifier[..].starts_with("B") || t.identifier[..].starts_with("C") || t.identifier[..].starts_with("D") {
-                    i = i + 1;
                     rom_index = rom_index + 1;
-                } else if  &t.identifier[..] == "#" {
+                    i = i + 1;
+                } else if  &t.identifier[..] == "$" ||  &t.identifier[..] == "#" ||  &t.identifier[..] == "%"{
                     i = i + 2;
                     rom_index = rom_index + 2;
                 } else {
@@ -231,43 +257,52 @@ fn main() ->std::io::Result<()> {
             },
             "XOR" => {
                 i = i + 1;
+                t = &tokens[i];
                 if t.identifier[..].starts_with("A") || t.identifier[..].starts_with("B") || t.identifier[..].starts_with("C") || t.identifier[..].starts_with("D") {
-                    i = i + 1;
                     rom_index = rom_index + 1;
-                } else if  &t.identifier[..] == "#" {
+                    i = i + 1;
+                } else if  &t.identifier[..] == "$" ||  &t.identifier[..] == "#" ||  &t.identifier[..] == "%"{
                     i = i + 2;
                     rom_index = rom_index + 2;
                 } else {
-                    i = i + 1;
                     rom_index = rom_index + 2;
+                    i = i + 1;
                 }
             },
             "NOT" => {
-                i = i + 1;
                 rom_index = rom_index + 1;
+                i = i + 1;
             },
-            "HLT" => {
+            "DEC" => {
+                rom_index = rom_index + 1;
+                i = i + 1;
+            },
+            "INC" => {
+                rom_index = rom_index + 1;
+                i = i + 1;
+            },
+            "HALT" => {
+                rom_index = rom_index + 1;
                 i = i + 1;
             },
             ":" => {
                 i = i + 1;
                 t = &tokens[i];
                 labels.insert(t.identifier[..].to_string(), rom_index);
-                i = i + 1;
             },
             _ => {},
         }
         i = i + 1;
-    }
-
-    for (label, pos) in &labels {
-        println!("{} - {}", label, pos);
     }
     
     rom_index = 0;
     i = 0;
     let mut rom: [u8; 256] = [0; 256];
     let mut had_error: bool = false;
+
+    for (label, mem_loc) in &labels {
+        println!("{} ---- {}", label, mem_loc);
+    }
 
     loop {
         if i == token_length { break; }
@@ -301,7 +336,7 @@ fn main() ->std::io::Result<()> {
 
                 i = i + 1;
                 t = &tokens[i];
-                if &t.identifier[..] == "#" {
+                if &t.identifier[..] == "$" {
                     opcode = opcode | (0x00 << 2);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
@@ -312,12 +347,34 @@ fn main() ->std::io::Result<()> {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
+                } else if &t.identifier[..] == "%" {
+                    opcode = opcode | (0x01 << 2);
+                    rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 2) {
+                        rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else if &t.identifier[..] == "#" {
+                    opcode = opcode | (0x01 << 2);
+                    rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    if let Ok(y) = u8::from_str_radix(&t.identifier,16) {
+                        rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
                 } else {
                     opcode = opcode | (0x01 << 2);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
 
-                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 10) {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
@@ -326,7 +383,6 @@ fn main() ->std::io::Result<()> {
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
-                    println!("-- {}", &t.identifier);
                     println!("Expected semicolon at end of line {}.", &t.line);
                     had_error = true;
                 }
@@ -354,7 +410,7 @@ fn main() ->std::io::Result<()> {
 
                 i = i + 1;
                 t = &tokens[i];
-                if &t.identifier[..] == "#" {
+                if &t.identifier[..] == "$" {
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
 
@@ -364,10 +420,8 @@ fn main() ->std::io::Result<()> {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
-                } else {
-                    // handle error
-                }
-                
+                } 
+
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
@@ -375,7 +429,7 @@ fn main() ->std::io::Result<()> {
                     had_error = true;
                 }
             },
-            "PSH" =>{
+            "PUSH" =>{
                 opcode = opcode | (0x2 << 4); 
                 i = i + 1;
                 t = &tokens[i];
@@ -387,10 +441,19 @@ fn main() ->std::io::Result<()> {
                     opcode = opcode | (0x02);
                 } else if &t.identifier[..] == "D" {
                     opcode = opcode | (0x03);
+                } else {
+                    opcode = opcode | (0x04);
                 }
 
                 rom[rom_index] = opcode;
                 rom_index = rom_index + 1;
+
+                if opcode & 0x04 == 0x04 {
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } 
 
                 i = i + 1;
                 t = &tokens[i];
@@ -479,17 +542,20 @@ fn main() ->std::io::Result<()> {
                 
                 i = i + 1;
                 t = &tokens[i];
-                if &t.identifier[..] == "#" {
+                if &t.identifier[..] == "$" || &t.identifier[..] == "#" {
                     i = i + 1;
                     t = &tokens[i];
                     if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
+                } else if labels.contains_key(&t.identifier[..].to_string()) {
+                    rom[rom_index] = labels[&t.identifier[..].to_string()] as u8;
+                    rom_index = rom_index + 1;
                 } else {
                     // handle error
                 }
-                
+
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
@@ -504,17 +570,20 @@ fn main() ->std::io::Result<()> {
                 
                 i = i + 1;
                 t = &tokens[i];
-                if &t.identifier[..] == "#" {
+                if &t.identifier[..] == "$" || &t.identifier[..] == "#" {
                     i = i + 1;
                     t = &tokens[i];
                     if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
+                } else if labels.contains_key(&t.identifier[..].to_string()) {
+                    rom[rom_index] = labels[&t.identifier[..].to_string()] as u8;
+                    rom_index = rom_index + 1;
                 } else {
                     // handle error
                 }
-                
+
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
@@ -529,7 +598,7 @@ fn main() ->std::io::Result<()> {
                 
                 i = i + 1;
                 t = &tokens[i];
-                if &t.identifier[..] == "#" {
+                if &t.identifier[..] == "$" || &t.identifier[..] == "#" {
                     i = i + 1;
                     t = &tokens[i];
                     if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
@@ -542,7 +611,7 @@ fn main() ->std::io::Result<()> {
                 } else {
                     // handle error
                 }
-                
+
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
@@ -550,24 +619,27 @@ fn main() ->std::io::Result<()> {
                     had_error = true;
                 }
             },
-            "CLL" =>{
+            "CALL" =>{
                 opcode = opcode | (0x8 << 4); 
                 rom[rom_index] = opcode;
                 rom_index = rom_index + 1;
                 
                 i = i + 1;
                 t = &tokens[i];
-                if &t.identifier[..] == "#" {
+                if &t.identifier[..] == "$" || &t.identifier[..] == "#" {
                     i = i + 1;
                     t = &tokens[i];
                     if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
+                } else if labels.contains_key(&t.identifier[..].to_string()) {
+                    rom[rom_index] = labels[&t.identifier[..].to_string()] as u8;
+                    rom_index = rom_index + 1;
                 } else {
                     // handle error
                 }
-                
+
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
@@ -579,7 +651,7 @@ fn main() ->std::io::Result<()> {
                 opcode = opcode | (0x9 << 4); 
                 rom[rom_index] = opcode;
                 rom_index = rom_index + 1;
-                
+
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
@@ -619,7 +691,7 @@ fn main() ->std::io::Result<()> {
                     opcode = opcode | (0x03);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
-                } else if  &t.identifier[..] == "#" {
+                } else if  &t.identifier[..] == "$"{
                     opcode = opcode | (0x01 << 2);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
@@ -630,16 +702,39 @@ fn main() ->std::io::Result<()> {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
+                } else if  &t.identifier[..] == "#" {
+                    opcode = opcode | (0x01 << 3);
+                    rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else if  &t.identifier[..] == "%" {
+                    opcode = opcode | (0x01 << 3);
+                    rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 2) {
+                        rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    } 
                 } else {
                     opcode = opcode | (0x01 << 3);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
 
-                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 10) {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
                 }
+
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
@@ -667,8 +762,30 @@ fn main() ->std::io::Result<()> {
                     opcode = opcode | (0x03);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
-                } else if  &t.identifier[..] == "#" {
+                } else if  &t.identifier[..] == "$"{
                     opcode = opcode | (0x01 << 2);
+                    rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else if  &t.identifier[..] == "%" {
+                    opcode = opcode | (0x01 << 3);
+                    rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 2) {
+                        rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else if  &t.identifier[..] == "#" {
+                    opcode = opcode | (0x01 << 3);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
 
@@ -683,7 +800,7 @@ fn main() ->std::io::Result<()> {
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
 
-                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 10) {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
@@ -715,7 +832,7 @@ fn main() ->std::io::Result<()> {
                     opcode = opcode | (0x03);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
-                } else if  &t.identifier[..] == "#" {
+                } else if  &t.identifier[..] == "$" {
                     opcode = opcode | (0x01 << 2);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
@@ -726,16 +843,39 @@ fn main() ->std::io::Result<()> {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
+                } else if &t.identifier[..] == "#" {
+                    opcode = opcode | (0x01 << 3);
+                    rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else if &t.identifier[..] == "%" {
+                    opcode = opcode | (0x01 << 3);
+                    rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 2) {
+                        rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
                 } else {
                     opcode = opcode | (0x01 << 3);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
 
-                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 10) {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
                 }
+
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
@@ -764,7 +904,7 @@ fn main() ->std::io::Result<()> {
                     opcode = opcode | (0x03);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
-                } else if  &t.identifier[..] == "#" {
+                } else if  &t.identifier[..] == "$" {
                     opcode = opcode | (0x01 << 2);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
@@ -775,16 +915,39 @@ fn main() ->std::io::Result<()> {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
+                } else if &t.identifier[..] == "#" {
+                    opcode = opcode | (0x01 << 3);
+                    rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else if &t.identifier[..] == "%" {
+                    opcode = opcode | (0x01 << 3);
+                    rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 2) {
+                        rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
                 } else {
                     opcode = opcode | (0x01 << 3);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
 
-                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 10) {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
                 }
+
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
@@ -812,7 +975,7 @@ fn main() ->std::io::Result<()> {
                     opcode = opcode | (0x03);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
-                } else if  &t.identifier[..] == "#" {
+                } else if  &t.identifier[..] == "$" {
                     opcode = opcode | (0x01 << 2);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
@@ -823,16 +986,39 @@ fn main() ->std::io::Result<()> {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
+                } else if &t.identifier[..] == "#" {
+                    opcode = opcode | (0x01 << 3);
+                    rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                        rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
+                } else if &t.identifier[..] == "%" {
+                    opcode = opcode | (0x01 << 3);
+                    rom[rom_index] = opcode;
+                    rom_index = rom_index + 1;
+
+                    i = i + 1;
+                    t = &tokens[i];
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 2) {
+                        rom[rom_index] = y;
+                        rom_index = rom_index + 1;
+                    }
                 } else {
                     opcode = opcode | (0x01 << 3);
                     rom[rom_index] = opcode;
                     rom_index = rom_index + 1;
 
-                    if let Ok(y) = u8::from_str_radix(&t.identifier, 16) {
+                    if let Ok(y) = u8::from_str_radix(&t.identifier, 10) {
                         rom[rom_index] = y;
                         rom_index = rom_index + 1;
                     }
                 }
+
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
@@ -849,24 +1035,54 @@ fn main() ->std::io::Result<()> {
                 i = i + 1;
                 t = &tokens[i];
                 if &t.identifier[..] != ";" {
-                   // handle error
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    had_error = true;
                 }
             },
-            "HLT" => { 
-                rom[rom_index] = 0xff; 
-                i = i + 1; 
-                t = &tokens[i]; 
+            "INC" => {
+                opcode = 0xA2; 
+                rom[rom_index] = opcode;
+                rom_index = rom_index + 1;
+
+                i = i + 1;
+                t = &tokens[i];
                 if &t.identifier[..] != ";" {
                     println!("Expected semicolon at end of line {}.", &t.line);
                     had_error = true;
                 }
+            },
+            "DEC" => {
+                opcode = 0xA1; 
+                rom[rom_index] = opcode;
+                rom_index = rom_index + 1;
+
+                i = i + 1;
+                t = &tokens[i];
+                if &t.identifier[..] != ";" {
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    had_error = true;
+                }
+            },
+            "HALT" => { 
+                rom[rom_index] = 0xff; 
+                rom_index = rom_index + 1;
+
+                i = i + 1;
+                t = &tokens[i];
+                if &t.identifier[..] != ";" {
+                    println!("Expected semicolon at end of line {}.", &t.line);
+                    had_error = true;
+                }
+            },
+            ":" => {
+                i = i + 1;
             },
             _ => {},
         }
         i = i + 1;
     }
 
-    for i in 0..256 {
+    for i in 0..128 {
         println!("ROM [{}] -- {}", i, rom[i]);
     }
 
