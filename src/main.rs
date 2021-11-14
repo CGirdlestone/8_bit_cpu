@@ -3,37 +3,41 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::env;
 
-const B_IN: u16 = 0x1;
-const A_IN: u16 = 0x2;
+const A_IN: u16 = 0x1;
+const B_IN: u16 = 0x2;
 const C_IN: u16 = 0x3;
 const IR_IN: u16 = 0x4;
 const MDR_IN: u16 = 0x5;
 const MAR_IN: u16 = 0x6;
 const PC_IN: u16 = 0x7;
 
-const ALU_OUT: u16 = 0x1 << 3;
+const A_OUT: u16 = 0x1 << 3;
 const B_OUT: u16 = 0x2 << 3;
-const A_OUT: u16 = 0x3 << 3;
-const MDR_OUT: u16 = 0x4 << 3;
-const RAM_OUT: u16 = 0x5 << 3;
-const ROM_OUT: u16 = 0x6 << 3;
-const PC_OUT: u16 = 0x7 << 3;
+const C_OUT: u16 = 0x3 << 3;
+const D_OUT: u16 = 0x4 << 3;
+const ROM_OUT: u16 = 0x5 << 3;
+const RAM_OUT: u16 = 0x6 << 3;
+const MDR_OUT: u16 = 0x7 << 3;
 
-const NOT_OUT: u16 = 0x1 << 6;
-const OR_OUT: u16 = 0x2 << 6;
-const SP_DEC: u16 = 0x3 << 6;
-const SP_INC: u16 = 0x4 << 6;
-const SUB: u16 = 0x5 << 6;
-const AND_OUT: u16 = 0x6 << 6;
-const PC_INC: u16 = 0x7 << 6;
+const ADD_OUT: u16 = 0x1 << 6;
+const AND_OUT: u16 = 0x2 << 6;
+const NOT_OUT: u16 = 0x3 << 6;
+const OR_OUT: u16 = 0x4 << 6;
+const XOR_OUT: u16 = 0x5 << 6;
+const PC_OUT: u16 = 0x6 << 6;
+const RAM_IN: u16 = 0x7 << 6;
 
-const C_OUT: u16 = 0x1 << 9;
-const RAM_IN: u16 = 0x1 << 10;
-const XOR_OUT: u16 = 0x1 << 11;
-const D_IN: u16 = 0x1 << 12;
-const D_OUT: u16 = 0x1 << 13;
-const D_INC: u16 = 0x1 << 14;
-const D_DEC: u16 = 0x1 << 15;
+const SP_OUT: u16 = 0x1 << 9;
+const FLAGS_IN: u16 = 0x2 << 9;
+const SUB: u16 = 0x3 << 9;
+const PC_INC: u16 = 0x4 << 9;
+const D_IN: u16 = 0x5 << 9;
+const D_INC: u16 = 0x6 << 9;
+const D_DEC: u16 = 0x7 << 9;
+
+const HLT: u16 = 0x1 << 12;
+const SP_INC: u16 = 0x1 << 13;
+const SP_DEC: u16 = 0x1 << 14;
 
 
 struct CPU {
@@ -126,8 +130,8 @@ fn execute_micro_instruction(_cpu: &mut CPU, step: u8) {
         micro if micro == MDR_OUT | B_IN /*0x021*/ => { _cpu.bus = _cpu.mdr; _cpu.b = _cpu.bus; },
         micro if micro == MDR_OUT | C_IN /*0x023*/ => { _cpu.bus = _cpu.mdr; _cpu.c = _cpu.bus; },
         micro if micro == MDR_OUT | D_IN /*0x1020*/ => { _cpu.bus = _cpu.mdr; _cpu.d = _cpu.bus; },
-        micro if micro == ALU_OUT | A_IN /*0x00A*/ => { _cpu.alu = add(_cpu.a, _cpu.b, &mut _cpu.flags, 0x00); _cpu.bus = _cpu.alu; _cpu.a = _cpu.bus; },
-        micro if micro == ALU_OUT | A_IN | SUB /*0x14A*/ => { _cpu.alu = add(_cpu.a, _cpu.b, &mut _cpu.flags, 0x01); _cpu.bus = _cpu.alu; _cpu.a = _cpu.bus; },
+        micro if micro == ADD_OUT | A_IN /*0x00A*/ => { _cpu.alu = add(_cpu.a, _cpu.b, &mut _cpu.flags, 0x00); _cpu.bus = _cpu.alu; _cpu.a = _cpu.bus; },
+        micro if micro == ADD_OUT | A_IN | SUB /*0x14A*/ => { _cpu.alu = add(_cpu.a, _cpu.b, &mut _cpu.flags, 0x01); _cpu.bus = _cpu.alu; _cpu.a = _cpu.bus; },
         micro if micro == AND_OUT | A_IN /*0x182*/  => { _cpu._and = and(_cpu.a, _cpu.b); _cpu.bus = _cpu._and; _cpu.a = _cpu.bus; _cpu.flags = 0x00; if _cpu.a == 0 { _cpu.flags = 0; _cpu.flags = 0x01 << 1; }},
         micro if micro == OR_OUT | A_IN /*0x082*/  => { _cpu._or = or(_cpu.a, _cpu.b); _cpu.bus = _cpu._or; _cpu.a = _cpu.bus; _cpu.flags = 0x00; if _cpu.a == 0 { _cpu.flags = 0; _cpu.flags = 0x01 << 1; }},
         micro if micro == XOR_OUT | A_IN /*0x802*/  => { _cpu._xor = xor(_cpu.a, _cpu.b); _cpu.bus = _cpu._xor; _cpu.a = _cpu.bus; _cpu.flags = 0x00; if _cpu.a == 0 { _cpu.flags = 0; _cpu.flags = 0x01 << 1; }},
@@ -142,16 +146,15 @@ fn execute_micro_instruction(_cpu: &mut CPU, step: u8) {
         micro if micro == B_OUT | RAM_IN /*0x410*/ => { _cpu.bus = _cpu.b; _cpu.ram[_cpu.mar as usize] = _cpu.bus; },
         micro if micro == C_OUT | RAM_IN /*0x600*/ => { _cpu.bus = _cpu.c; _cpu.ram[_cpu.mar as usize] = _cpu.bus; },
         micro if micro == D_OUT | RAM_IN /*0x2400*/ => { _cpu.bus = _cpu.d; _cpu.ram[_cpu.mar as usize] = _cpu.bus; },
-        micro if micro == A_OUT | RAM_IN | SP_INC /*0x5D8*/ => { _cpu.bus = _cpu.a; _cpu.ram[(_cpu.sp) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
-        micro if micro == B_OUT | RAM_IN | SP_INC /*0x5D0*/ => { _cpu.bus = _cpu.b; _cpu.ram[(_cpu.sp) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
-        micro if micro == C_OUT | RAM_IN | SP_INC /*0x7C0*/ => { _cpu.bus = _cpu.c; _cpu.ram[(_cpu.sp) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
-        micro if micro == D_OUT | RAM_IN | SP_INC /*0x25C0*/ => { _cpu.bus = _cpu.d; _cpu.ram[(_cpu.sp) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
+        micro if micro == A_OUT | RAM_IN | SP_INC /*0x5D8*/ => { _cpu.bus = _cpu.a; _cpu.ram[(_cpu.mar) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
+        micro if micro == B_OUT | RAM_IN | SP_INC /*0x5D0*/ => { _cpu.bus = _cpu.b; _cpu.ram[(_cpu.mar) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
+        micro if micro == C_OUT | RAM_IN | SP_INC /*0x7C0*/ => { _cpu.bus = _cpu.c; _cpu.ram[(_cpu.mar) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
+        micro if micro == D_OUT | RAM_IN | SP_INC /*0x25C0*/ => { _cpu.bus = _cpu.d; _cpu.ram[(_cpu.mar) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
         micro if micro == ROM_OUT | RAM_IN | SP_INC /*0x530*/ => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.ram[(_cpu.sp)  as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
         micro if micro == SP_DEC | RAM_OUT | A_IN /*0x0EA*/ => { _cpu.sp = _cpu.sp - 1; _cpu.bus = _cpu.ram[(_cpu.sp) as usize]; _cpu.a = _cpu.bus; },
         micro if micro == SP_DEC | RAM_OUT | B_IN /*0x0E9*/ => { _cpu.sp = _cpu.sp - 1; _cpu.bus = _cpu.ram[(_cpu.sp) as usize]; _cpu.b = _cpu.bus; },
         micro if micro == SP_DEC | RAM_OUT | C_IN /*0x0EB*/ => { _cpu.sp = _cpu.sp - 1; _cpu.bus = _cpu.ram[(_cpu.sp) as usize]; _cpu.c = _cpu.bus; },
         micro if micro == SP_DEC | RAM_OUT | D_IN /*0x10E8*/ => { _cpu.sp = _cpu.sp - 1; _cpu.bus = _cpu.ram[(_cpu.sp) as usize]; _cpu.d = _cpu.bus; },
-        micro if micro == B_OUT | RAM_IN | SP_INC /*0x2A0*/ => { _cpu.bus = _cpu.b; _cpu.ram[(_cpu.sp) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
         micro if micro == PC_OUT | RAM_IN | SP_INC /*0x1B8*/ => { _cpu.bus = _cpu.pc; _cpu.ram[(_cpu.sp) as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
         micro if micro == SP_DEC | RAM_OUT | PC_IN /*0x0EF*/ => { _cpu.sp = _cpu.sp - 1; _cpu.bus = _cpu.ram[(_cpu.sp) as usize]; _cpu.pc = _cpu.bus; },
         micro if micro == ROM_OUT | RAM_IN /*0x1B0*/ => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.ram[(_cpu.sp)  as usize] = _cpu.bus; },
@@ -161,6 +164,9 @@ fn execute_micro_instruction(_cpu: &mut CPU, step: u8) {
         micro if micro == SP_INC /*0x100*/ => { _cpu.sp = _cpu.sp + 1; },
         micro if micro == D_DEC => { _cpu.d = _cpu.d - 1; _cpu.flags = 0x00; if _cpu.d == 0 { _cpu.flags = 0; _cpu.flags = 0x01 << 1; } },
         micro if micro == D_INC => { _cpu.d = _cpu.d + 1; },
+        micro if micro == SP_OUT | MAR_IN => { _cpu.bus = _cpu.sp; _cpu.mar = _cpu.bus; },
+        micro if micro == ROM_OUT | MDR_IN => { _cpu.bus = _cpu.rom[_cpu.mar as usize]; _cpu.mdr = _cpu.bus; },
+        micro if micro == MDR_OUT | RAM_IN | SP_INC => { _cpu.bus = _cpu.mdr; _cpu.ram[_cpu.mar as usize] = _cpu.bus; _cpu.sp = _cpu.sp + 1; },
         _ => return,
     }
 }
@@ -318,8 +324,8 @@ fn load_eeprom(_cpu: &mut CPU) {
 
     // PUSH (from register A)
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x20] = A_OUT | RAM_IN | SP_INC; // A out, RAM in, SP inc
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x20] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x20] = SP_OUT | MAR_IN; // A out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x20] = A_OUT | RAM_IN | SP_INC;
         _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x20] = 0x000;
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x20] = 0x000;
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x20] = 0x000;
@@ -328,8 +334,8 @@ fn load_eeprom(_cpu: &mut CPU) {
 
     // PUSH (from register B) 
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x21] = B_OUT | RAM_IN | SP_INC; // B out, RAM in, SP inc
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x21] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x21] = SP_OUT | MAR_IN; // B out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x21] = B_OUT | RAM_IN | SP_INC;
         _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x21] = 0x000;
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x21] = 0x000;
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x21] = 0x000;
@@ -338,8 +344,8 @@ fn load_eeprom(_cpu: &mut CPU) {
 
     // PUSH (from register C) 
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x22] = C_OUT | RAM_IN | SP_INC; // C out, RAM in, SP inc
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x22] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x22] = SP_OUT | MAR_IN; // C out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x22] = C_OUT | RAM_IN | SP_INC;
         _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x22] = 0x000; 
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x22] = 0x000;
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x22] = 0x000;
@@ -348,8 +354,8 @@ fn load_eeprom(_cpu: &mut CPU) {
 
     // PUSH (from register D) 
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x23] = D_OUT | RAM_IN | SP_INC; // D out, RAM in, SP inc
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x23] = 0x000;
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x23] = SP_OUT | MAR_IN; // D out, RAM in, SP inc
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x23] = D_OUT | RAM_IN | SP_INC;
         _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x23] = 0x000; 
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x23] = 0x000;
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x23] = 0x000;
@@ -359,10 +365,10 @@ fn load_eeprom(_cpu: &mut CPU) {
     // PUSH (immediate)
     for i in 0..4 {
         _cpu.eeprom[(i << 11) | (0x2 << 8) | 0x24] = PC_OUT | MAR_IN;
-        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x24] = ROM_OUT | RAM_IN | SP_INC;
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x24] = PC_INC;
-        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x24] = 0x000; 
-        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x24] = 0x000; 
+        _cpu.eeprom[(i << 11) | (0x3 << 8) | 0x24] = ROM_OUT | MDR_IN;
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0x24] = SP_OUT | MAR_IN; 
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0x24] = MDR_OUT | RAM_IN | SP_INC;  
+        _cpu.eeprom[(i << 11) | (0x6 << 8) | 0x24] = PC_INC; 
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0x24] = 0x000; 
     }
 
@@ -570,7 +576,7 @@ fn load_eeprom(_cpu: &mut CPU) {
     for i in 0..4 {
         _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xB0] = B_OUT | RAM_IN | SP_INC; // B out, RAM in, SP inc
         _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xB0] = A_OUT | B_IN; // A out, B in 
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xB0] = ALU_OUT | A_IN; // ALU out, A in
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xB0] = ADD_OUT | A_IN; // ALU out, A in
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xB0] = RAM_OUT | B_IN | SP_DEC; // RAM out, B in, SP dec
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xB0] = 0x000;
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xB0] = 0x000; 
@@ -578,7 +584,7 @@ fn load_eeprom(_cpu: &mut CPU) {
 
     // ADD B to A
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xB1] = ALU_OUT | A_IN; // ALU out, A in 
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xB1] = ADD_OUT | A_IN; // ALU out, A in 
         _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xB1] = 0x000;
         _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xB1] = 0x000;
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xB1] = 0x000;
@@ -590,7 +596,7 @@ fn load_eeprom(_cpu: &mut CPU) {
     for i in 0..4 {
         _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xB2] = B_OUT | RAM_IN | SP_INC; // B  out, RAM in, SP inc
         _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xB2] = C_OUT | B_IN; // C out, B in 
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xB2] = ALU_OUT | A_IN; // ALU out, A in
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xB2] = ADD_OUT | A_IN; // ALU out, A in
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xB2] = RAM_OUT | B_IN | SP_DEC; // RAM out, B in, SP dec
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xB2] = 0x000;
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xB2] = 0x000; 
@@ -601,7 +607,7 @@ fn load_eeprom(_cpu: &mut CPU) {
         _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xB8] = B_OUT | RAM_IN | SP_INC; // B  out, RAM in, SP inc
         _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xB8] = PC_OUT | MAR_IN; // PC out, MAR in
         _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xB8] = ROM_OUT | B_IN | PC_INC; // rom out, B in, PC inc
-        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xB8] = ALU_OUT | A_IN; // ALU out, A in
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xB8] = ADD_OUT | A_IN; // ALU out, A in
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xB8] = RAM_OUT | B_IN | SP_DEC; // RAM out, B in, SP dec
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xB8] = 0x000;
     }
@@ -610,7 +616,7 @@ fn load_eeprom(_cpu: &mut CPU) {
     for i in 0..4 {
         _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xC0] = B_OUT | RAM_IN | SP_INC; // B out, RAM in, SP inc
         _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xC0] = A_OUT | B_IN; // A out, B in 
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xC0] = ALU_OUT | A_IN | SUB; // ALU out, A in, SUB
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xC0] = ADD_OUT | A_IN | SUB; // ALU out, A in, SUB
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xC0] = RAM_OUT | B_IN | SP_DEC; // RAM out, B in, SP dec
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xC0] = 0x000;
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xC0] = 0x000; 
@@ -618,7 +624,7 @@ fn load_eeprom(_cpu: &mut CPU) {
 
     // SUB B to A
     for i in 0..4 {
-        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xC1] = ALU_OUT | A_IN | SUB; // ALU out, A in, SUB
+        _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xC1] = ADD_OUT | A_IN | SUB; // ALU out, A in, SUB
         _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xC1] = 0x000;
         _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xC1] = 0x000;
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xC1] = 0x000;
@@ -630,7 +636,7 @@ fn load_eeprom(_cpu: &mut CPU) {
     for i in 0..4 {
         _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xC2] = B_OUT | RAM_IN | SP_INC; // B  out, RAM in, SP inc
         _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xC2] = C_OUT | B_IN; // C out, B in 
-        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xC2] = ALU_OUT | A_IN | SUB; // ALU out, A in, SUB
+        _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xC2] = ADD_OUT | A_IN | SUB; // ALU out, A in, SUB
         _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xC2] = RAM_OUT | B_IN | SP_DEC; // RAM out, B in, SP dec
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xC2] = 0x000;
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xC2] = 0x000; 
@@ -641,7 +647,7 @@ fn load_eeprom(_cpu: &mut CPU) {
         _cpu.eeprom[(i << 11) | (0x2 << 8) | 0xC8] = B_OUT | RAM_IN | SP_INC; // B  out, RAM in, SP inc
         _cpu.eeprom[(i << 11) | (0x3 << 8) | 0xC8] = PC_OUT | MAR_IN; // PC out, MAR in
         _cpu.eeprom[(i << 11) | (0x4 << 8) | 0xC8] = ROM_OUT | B_IN | PC_INC; // rom out, B in, PC inc
-        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xC8] = ALU_OUT | A_IN | SUB; // ALU out, A in, SUB
+        _cpu.eeprom[(i << 11) | (0x5 << 8) | 0xC8] = ADD_OUT | A_IN | SUB; // ALU out, A in, SUB
         _cpu.eeprom[(i << 11) | (0x6 << 8) | 0xC8] = RAM_OUT | B_IN | SP_DEC; // RAM out, B in, SP dec
         _cpu.eeprom[(i << 11) | (0x7 << 8) | 0xC8] = 0x000;
     }
@@ -827,16 +833,25 @@ fn create_cpu() -> CPU {
     return _cpu;
 }
 
+fn validate_filetype(src: &String) -> bool {
+    let v: Vec<&str> = src.split(".").collect();
+    v[1] == "rbin"
+}
+
 fn main() ->std::io::Result<()> {
     
     let args: Vec<String> = env::args().collect();
     let filename = &args[1];
+    if !validate_filetype(&filename) {
+        println!("Invalid file type. Only .rbin files can be executed.");
+        return Ok(());
+    }
 
     let mut _cpu = create_cpu();
 
     let mut f = File::open(filename)?;
     let mut rom = Vec::new();
-    f.read_to_end(&mut rom);
+    f.read_to_end(&mut rom)?;
 
    for i in 0..256 {
         _cpu.rom[i] = rom[i];

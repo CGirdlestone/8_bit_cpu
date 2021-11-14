@@ -25,11 +25,9 @@ SUB 1;
 STR A, $3;
 JNZ loop;
 
-MOV A, 10;
-MOV B, 10;
-MOV D, 10;
+PUSH 10;
+POP A;
 OUT;
-CALL mul;
 
 HALT;
 
